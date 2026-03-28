@@ -5,8 +5,8 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 COPY . .
-RUN dotnet restore ClientEcommerce.API/ClientEcommerce.API.csproj
-RUN dotnet publish ClientEcommerce.API/ClientEcommerce.API.csproj -c Release -o /app/publish
+RUN dotnet restore ClientEcommerce.API.csproj
+RUN dotnet publish ClientEcommerce.API.csproj -c Release -o /app/publish
 
 # -----------------------
 # Runtime stage
