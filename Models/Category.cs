@@ -1,29 +1,29 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using ClientEcommerce.API.Models;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
-namespace ClientEcommerce.API.Models
+public class Category
 {
-    public class Category
-    {
-        public int Id { get; set; }
+    public int Id { get; set; }
 
-        [Required, MaxLength(100)]
-        public required string Name { get; set; }
+    [Required, MaxLength(100)]
+    public required string Name { get; set; }
 
-        public string Slug { get; set; }
+    public string? Slug { get; set; }
 
-        public bool IsActive { get; set; } = true;
+    public bool IsActive { get; set; } = true;
 
-        public string? ImageUrl { get; set; }
+    public string? ImageUrl { get; set; }
 
-        // 🔥 NEW — Parent Category
-        public int? ParentCategoryId { get; set; }
+    public int? ParentCategoryId { get; set; }
 
-        [ForeignKey("ParentCategoryId")]
-        public Category? ParentCategory { get; set; }
+    [ForeignKey("ParentCategoryId")]
+    [JsonIgnore]   // ⭐ prevents infinite serialization loop
+    public Category? ParentCategory { get; set; }
 
-        public ICollection<Category> SubCategories { get; set; } = new List<Category>();
+    public ICollection<Category> SubCategories { get; set; } = new List<Category>();
 
-        public ICollection<Product> Products { get; set; } = new List<Product>();
-    }
+    [JsonIgnore]   // ⭐ also recommended
+    public ICollection<Product> Products { get; set; } = new List<Product>();
 }
