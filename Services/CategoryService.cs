@@ -97,8 +97,8 @@ namespace ClientEcommerce.API.Services
                 IsActive = category.IsActive,
                 ParentCategoryId = category.ParentCategoryId,
                 ImageUrl = category.ImageUrl,   // 🔥 ADD THIS
-                SubCategories = category.SubCategories
-                    .Where(sc => sc.IsActive)
+                SubCategories = (category.SubCategories ?? new List<Category>())
+    .Where(sc => sc.IsActive)
                     .Select(sc => new CategoryDto
                     {
                         Id = sc.Id,
