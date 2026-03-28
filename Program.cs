@@ -179,7 +179,7 @@ else
 
 // ⚠️ Avoid HTTPS redirect issues in Railway
 // app.UseHttpsRedirection();
-
+app.UseRouting();
 app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
