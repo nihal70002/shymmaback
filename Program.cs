@@ -76,24 +76,21 @@ builder.Services.AddCors(options =>
 // ===================== DATABASE =====================
 
 
-
 var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+
+string connectionString;
 
 if (!string.IsNullOrEmpty(databaseUrl))
 {
     var uri = new Uri(databaseUrl);
     var userInfo = uri.UserInfo.Split(':');
 
-    var connectionString =
+    connectionString =
         $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.Trim('/')};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;Trust Server Certificate=true";
-
-    builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseNpgsql(connectionString));
 }
 else
 {
-    builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 }
 
 builder.Services.AddDbContext<AppDbContext>(options =>
