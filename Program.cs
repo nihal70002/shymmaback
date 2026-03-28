@@ -71,7 +71,7 @@ builder.Services.AddCors(options =>
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
-});
+});    
 
 // ===================== DATABASE =====================
 
