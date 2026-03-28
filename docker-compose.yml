@@ -1,0 +1,19 @@
+services:
+  api:
+    build: .
+    depends_on:
+      - postgres
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=clientecommerce_db;Username=postgres;Password=postgres
+    ports:Cunha@123
+      - "5000:80"
+
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    environment:
+      POSTGRES_DB: clientecommerce_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Cunha@123
+    ports:
+      - "5432:5432"
