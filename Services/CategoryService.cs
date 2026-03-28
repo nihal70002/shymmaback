@@ -84,10 +84,12 @@ namespace ClientEcommerce.API.Services
         public CategoryDto? GetCategoryWithChildren(string slug)
         {
             var category = _context.Categories
+                .AsNoTracking() // ⭐ prevents EF tracking issues
                 .Include(c => c.SubCategories)
                 .FirstOrDefault(c => c.Slug == slug && c.IsActive);
 
-            if (category == null) return null;
+            if (category == null)
+                return null;
 
             return new CategoryDto
             {
@@ -96,9 +98,10 @@ namespace ClientEcommerce.API.Services
                 Slug = category.Slug,
                 IsActive = category.IsActive,
                 ParentCategoryId = category.ParentCategoryId,
-                ImageUrl = category.ImageUrl,   // 🔥 ADD THIS
-                SubCategories = (category.SubCategories ?? new List<Category>())
-    .Where(sc => sc.IsActive)
+                ImageUrl = category.ImageUrl,
+
+                SubCategories = category.SubCategories
+                    ?.Where(sc => sc.IsActive)
                     .Select(sc => new CategoryDto
                     {
                         Id = sc.Id,
@@ -107,10 +110,10 @@ namespace ClientEcommerce.API.Services
                         IsActive = sc.IsActive,
                         ParentCategoryId = sc.ParentCategoryId,
                         ImageUrl = sc.ImageUrl
-                    }).ToList()
+                    })
+                    .ToList() ?? new List<CategoryDto>()
             };
         }
-
         public void Update(int id, UpdateCategoryDto dto, string? newImageUrl)
         {
             var category = _context.Categories
