@@ -129,7 +129,12 @@ builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddDistributedMemoryCache();
-
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // This prevents the "Object cycle detected" 500 error
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    });
 // ===================== CLOUDINARY =====================
 
 builder.Services.Configure<CloudinarySettings>(
