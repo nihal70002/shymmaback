@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ClientEcommerce.API.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialClean : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -52,11 +52,20 @@ namespace ClientEcommerce.API.Migrations
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
+                    Slug = table.Column<string>(type: "text", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    ImageUrl = table.Column<string>(type: "text", nullable: true),
+                    ParentCategoryId = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Categories", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Categories_Categories_ParentCategoryId",
+                        column: x => x.ParentCategoryId,
+                        principalTable: "Categories",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -89,6 +98,7 @@ namespace ClientEcommerce.API.Migrations
                     Name = table.Column<string>(type: "text", nullable: false),
                     ProductCode = table.Column<string>(type: "text", nullable: true),
                     CategoryId = table.Column<int>(type: "integer", nullable: false),
+                    NameArabic = table.Column<string>(type: "text", nullable: true),
                     Description = table.Column<string>(type: "text", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     BrandId = table.Column<int>(type: "integer", nullable: false),
@@ -227,6 +237,10 @@ namespace ClientEcommerce.API.Migrations
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     ProductId = table.Column<int>(type: "integer", nullable: false),
+                    Class = table.Column<string>(type: "text", nullable: true),
+                    Style = table.Column<string>(type: "text", nullable: true),
+                    Material = table.Column<string>(type: "text", nullable: true),
+                    Color = table.Column<string>(type: "text", nullable: true),
                     LowStockThreshold = table.Column<int>(type: "integer", nullable: false),
                     ProductCode = table.Column<string>(type: "text", nullable: true),
                     Size = table.Column<string>(type: "text", nullable: false),
@@ -338,6 +352,11 @@ namespace ClientEcommerce.API.Migrations
                 name: "IX_Carts_UserId",
                 table: "Carts",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Categories_ParentCategoryId",
+                table: "Categories",
+                column: "ParentCategoryId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OrderItems_OrderId",

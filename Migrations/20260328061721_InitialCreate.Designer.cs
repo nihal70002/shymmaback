@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ClientEcommerce.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260222072326_AddCategoryHierarchy")]
-    partial class AddCategoryHierarchy
+    [Migration("20260328061721_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -140,6 +140,9 @@ namespace ClientEcommerce.API.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("text");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
@@ -150,6 +153,10 @@ namespace ClientEcommerce.API.Migrations
 
                     b.Property<int?>("ParentCategoryId")
                         .HasColumnType("integer");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -255,6 +262,9 @@ namespace ClientEcommerce.API.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("NameArabic")
                         .HasColumnType("text");
 
                     b.Property<string>("ProductCode")
