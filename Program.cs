@@ -62,12 +62,12 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy
-            .WithOrigins(
-                "http://localhost:5173",
-                "https://shymmasurgicals.in",
-                "https://www.shymmasurgicals.in"
-            // ⚠️ Add your Vercel URL AFTER deploy (not placeholder)
-            )
+           .WithOrigins(
+    "http://localhost:5173",
+    "https://shymmasurgicals.in",
+    "https://www.shymmasurgicals.in",
+    "https://shymmafront-su9oujgbj-nihal70002s-projects.vercel.app"
+)
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
