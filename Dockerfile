@@ -5,8 +5,8 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 COPY . .
-RUN dotnet restore PrivateECommerce.API/PrivateECommerce.API.csproj
-RUN dotnet publish PrivateECommerce.API/PrivateECommerce.API.csproj -c Release -o /app/publish
+RUN dotnet restore shymmaback.csproj
+RUN dotnet publish shymmaback.csproj -c Release -o /app/publish
 
 # -----------------------
 # Runtime stage
@@ -19,4 +19,4 @@ COPY --from=build /app/publish .
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 
-ENTRYPOINT ["dotnet", "PrivateECommerce.API.dll"]
+ENTRYPOINT ["dotnet", "shymmaback.dll"]
