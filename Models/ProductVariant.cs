@@ -19,7 +19,7 @@ namespace ClientEcommerce.API.Models
         public string? ProductCode { get; set; }
 
 
-        public required string Size { get; set; }
+        public string? Size { get; set; }
         public int Stock { get; set; }
         public decimal Price { get; set; }
     }
