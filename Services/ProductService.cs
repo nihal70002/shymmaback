@@ -594,11 +594,11 @@ namespace ClientEcommerce.API.Services
                     var duplicateCombinations = dto.Variants
                         .GroupBy(v => new
                         {
-                            Class = v.Class.Trim().ToLower(),
-                            Style = v.Style.Trim().ToLower(),
-                            Material = v.Material.Trim().ToLower(),
-                            Color = v.Color.Trim().ToLower(),
-                            Size = v.Size.Trim().ToLower()
+                            Class = v.Class?.Trim().ToLower(),
+                            Style = v.Style?.Trim().ToLower(),
+                            Material = v.Material?.Trim().ToLower(),
+                            Color = v.Color?.Trim().ToLower(),
+                            Size = v.Size?.Trim().ToLower()
                         })
                         .Where(g => g.Count() > 1)
                         .ToList();
@@ -654,11 +654,11 @@ namespace ClientEcommerce.API.Services
                         _context.ProductVariants.Add(new ProductVariant
                         {
                             ProductId = product.Id,
-                            Class = v.Class.Trim(),
-                            Style = v.Style.Trim(),
-                            Material = v.Material.Trim(),
-                            Color = v.Color.Trim(),
-                            Size = v.Size.Trim(),
+                            Class = v.Class?.Trim(),
+                            Style = v.Style?.Trim(),
+                            Material = v.Material?.Trim(),
+                            Color = v.Color?.Trim(),
+                            Size = v.Size?.Trim(),
                             ProductCode = sku,
                             Price = v.Price,
 
