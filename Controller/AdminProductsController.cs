@@ -67,6 +67,16 @@ namespace ClientEcommerce.API.Controllers
             _productService.AddProductVariant(productId, dto);
             return Ok("Variant added");
         }
+        [HttpGet("{productId}")]
+        public IActionResult GetProduct(int productId)
+        {
+            var product = _productService.GetProductById(productId);
+
+            if (product == null)
+                return NotFound("Product not found");
+
+            return Ok(product);
+        }
 
 
         [HttpGet("low-stock")]
