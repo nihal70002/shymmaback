@@ -160,21 +160,6 @@ using (var scope = app.Services.CreateScope())
 
 
 
-app.Use(async (context, next) =>
-{
-    if (context.Request.Method == "OPTIONS")
-    {
-        context.Response.Headers.Add("Access-Control-Allow-Origin", "https://shymmasurgicals.in");
-        context.Response.Headers.Add("Access-Control-Allow-Headers", "*");
-        context.Response.Headers.Add("Access-Control-Allow-Methods", "*");
-
-        context.Response.StatusCode = 200;
-        return;
-    }
-
-    await next();
-});
-
 // ===================== MIDDLEWARE =====================
 
 // 👉 Swagger only in Development (safer for production)
