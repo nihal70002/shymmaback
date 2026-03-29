@@ -19,7 +19,7 @@ namespace ClientEcommerce.API.Models
         public int BrandId { get; set; }
         public Brand Brand { get; set; } = null!;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
+        public ICollection<ProductComponent> Components { get; set; }
         public ICollection<ProductVariant> Variants { get; set; } = [];
     }
 }

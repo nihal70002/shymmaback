@@ -9,6 +9,7 @@
         public required string Description { get; set; }
         public List<string> ImageUrls { get; set; } = [];
 
+        public List<ProductComponentDto> Components { get; set; }
     }
 
 }

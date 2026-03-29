@@ -14,7 +14,7 @@
         public List<string> ImageUrls { get; set; } = [];
         public string PrimaryImageUrl { get; set; }
 
-
+        public List<ProductComponentDto> Components { get; set; }
         // Initializing the list ensures scannability and prevents null reference errors
         public List<ProductVariantDto> Sizes { get; set; } = [];
     }

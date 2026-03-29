@@ -23,7 +23,7 @@ namespace ClientEcommerce.API.Data
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
         public DbSet<StockMovement> StockMovements { get; set; }
         public DbSet<ProductStock> ProductStocks { get; set; }
-
+        public DbSet<ProductComponent> ProductComponents { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

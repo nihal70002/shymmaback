@@ -27,6 +27,7 @@ namespace ClientEcommerce.API.Services
 .Include(p => p.Brand)     // ✅ ADD
 .Include(p => p.Variants)
 .Include(p => p.Images)
+.Include(p => p.Components)
 
 
                 .OrderByDescending(p => p.Id)
@@ -250,6 +251,12 @@ namespace ClientEcommerce.API.Services
                     .OrderByDescending(i => i.IsPrimary)
                     .Select(i => i.ImageUrl)
                     .ToList(),
+                Components = product.Components.Select(c => new ProductComponentDto
+                {
+                    CatNo = c.CatNo,
+                    InstrumentName = c.InstrumentName,
+                    Units = c.Units
+                }).ToList(),
 
                 PrimaryImageUrl = product.Images
                     .Where(i => i.IsPrimary)
@@ -376,6 +383,20 @@ namespace ClientEcommerce.API.Services
                         Stock = v.Stock
                     });
                 }
+                // 5️⃣ Add Components
+                if (dto.Components != null && dto.Components.Any())
+                {
+                    foreach (var c in dto.Components)
+                    {
+                        _context.ProductComponents.Add(new ProductComponent
+                        {
+                            ProductId = product.Id,
+                            CatNo = c.CatNo,
+                            InstrumentName = c.InstrumentName,
+                            Units = c.Units
+                        });
+                    }
+                }
 
 
                 _context.SaveChanges();
@@ -414,7 +435,7 @@ namespace ClientEcommerce.API.Services
                 throw new ValidationException("Invalid Brand");
 
             var category = _context.Categories
-     .FirstOrDefault(c => c.Id == dto.CategoryId);
+                .FirstOrDefault(c => c.Id == dto.CategoryId);
 
             if (category == null)
                 throw new ValidationException("Invalid Category");
@@ -422,16 +443,19 @@ namespace ClientEcommerce.API.Services
             if (category.ParentCategoryId == null)
                 throw new ValidationException("Product must belong to subcategory only");
 
+            // ================= BASIC PRODUCT UPDATE =================
 
             product.Name = dto.Name;
             product.NameArabic = dto.NameArabic;
             product.CategoryId = dto.CategoryId;
-
             product.BrandId = dto.BrandId;
             product.Description = dto.Description;
+
+            // ================= UPDATE IMAGES =================
+
             _context.ProductImages.RemoveRange(
-    _context.ProductImages.Where(i => i.ProductId == productId)
-);
+                _context.ProductImages.Where(i => i.ProductId == productId)
+            );
 
             if (dto.ImageUrls.Count > 5)
                 throw new ValidationException("Maximum 5 images allowed");
@@ -446,11 +470,32 @@ namespace ClientEcommerce.API.Services
                 });
             }
 
+            // ================= UPDATE COMPONENTS =================
+
+            _context.ProductComponents.RemoveRange(
+                _context.ProductComponents.Where(c => c.ProductId == productId)
+            );
+
+            if (dto.Components != null && dto.Components.Any())
+            {
+                foreach (var c in dto.Components)
+                {
+                    _context.ProductComponents.Add(new ProductComponent
+                    {
+                        ProductId = productId,
+                        CatNo = c.CatNo,
+                        InstrumentName = c.InstrumentName,
+                        Units = c.Units
+                    });
+                }
+            }
+
+            // ================= SAVE =================
 
             _context.SaveChanges();
+
             IncrementCacheVersion();
         }
-
 
         // ===========================
         // ADMIN – TOGGLE PRODUCT
@@ -761,6 +806,7 @@ namespace ClientEcommerce.API.Services
             _context.SaveChanges();
             IncrementCacheVersion();
         }
+
 
 
 
