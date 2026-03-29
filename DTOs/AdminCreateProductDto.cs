@@ -9,7 +9,7 @@
         public int BrandId { get; set; }
         public required string Description { get; set; }
         public List<string> ImageUrls { get; set; } = [];
-        public List<ProductComponentDto> Components { get; set; }
+        public List<ProductComponentDto> Components { get; set; } = new();
 
         // Initializing with an empty list ensures the API doesn't crash 
         // if no variants are sent in the initial request object.
