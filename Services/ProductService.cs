@@ -230,12 +230,13 @@ namespace ClientEcommerce.API.Services
         public ProductDetailDto GetProductById(int productId)
         {
             var product = _context.Products
-                .Include(p => p.Category)
-                .Include(p => p.Variants)
-                .Include(p => p.Images)
-                .FirstOrDefault(p => p.Id == productId && p.IsActive);
-
+    .Include(p => p.Category)
+    .Include(p => p.Variants)
+    .Include(p => p.Images)
+    .Include(p => p.Components)   // ✅ ADD THIS LINE
+    .FirstOrDefault(p => p.Id == productId && p.IsActive);
             if (product == null) return null;
+
 
             return new ProductDetailDto
             {
@@ -251,12 +252,14 @@ namespace ClientEcommerce.API.Services
                     .OrderByDescending(i => i.IsPrimary)
                     .Select(i => i.ImageUrl)
                     .ToList(),
-                Components = product.Components.Select(c => new ProductComponentDto
-                {
-                    CatNo = c.CatNo,
-                    InstrumentName = c.InstrumentName,
-                    Units = c.Units
-                }).ToList(),
+                Components = product.Components?
+    .Select(c => new ProductComponentDto
+    {
+        CatNo = c.CatNo,
+        InstrumentName = c.InstrumentName,
+        Units = c.Units
+    })
+    .ToList() ?? new List<ProductComponentDto>(),
 
                 PrimaryImageUrl = product.Images
                     .Where(i => i.IsPrimary)
