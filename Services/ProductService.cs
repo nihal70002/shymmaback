@@ -1,7 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using ClientEcommerce.API.Data;
+﻿using ClientEcommerce.API.Data;
 using ClientEcommerce.API.DTOs;
+using ClientEcommerce.API.Enum;
 using ClientEcommerce.API.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using System.Text.Json;
 
@@ -242,6 +243,7 @@ namespace ClientEcommerce.API.Services
             {
                 ProductId = product.Id,
                 Name = product.Name,
+                ProductType = product.ProductType,
                 NameArabic = product.NameArabic,
                 CategoryId = product.CategoryId,
                 ProductCode = product.ProductCode,
@@ -297,14 +299,15 @@ namespace ClientEcommerce.API.Services
 
             try
             {
-                // 1️⃣ Validations
+                // ================= VALIDATIONS =================
+
                 var category = _context.Categories
-    .FirstOrDefault(c => c.Id == dto.CategoryId);
+                    .FirstOrDefault(c => c.Id == dto.CategoryId);
 
                 if (category == null)
                     throw new ValidationException("Invalid category selected");
 
-                // 🔥 IMPORTANT: Product must belong to subcategory only
+                // Product must belong to subcategory
                 if (category.ParentCategoryId == null)
                     throw new ValidationException("Product must belong to subcategory only");
 
@@ -314,37 +317,50 @@ namespace ClientEcommerce.API.Services
                 if (dto.ImageUrls.Count > 5)
                     throw new ValidationException("Maximum 5 images allowed per product");
 
-                var duplicateCombinations = dto.Variants
-    .GroupBy(v => new
-    {
-        Class = v.Class.Trim().ToLower(),
-        Style = v.Style.Trim().ToLower(),
-        Material = v.Material.Trim().ToLower(),
-        Color = v.Color.Trim().ToLower(),
-        Size = v.Size.Trim().ToLower()
-    })
-    .Where(g => g.Count() > 1)
-    .ToList();
+                // ================= PRODUCT TYPE VALIDATION =================
 
-                if (duplicateCombinations.Any())
-                    throw new ValidationException("Duplicate variant combination detected.");
+                if (dto.ProductType == ProductType.Kit && dto.Variants.Any())
+                    throw new ValidationException("Kit products cannot contain variants");
 
+                if (dto.ProductType == ProductType.VariantMatrix && dto.Components.Any())
+                    throw new ValidationException("Variant matrix products cannot contain components");
 
-                foreach (var v in dto.Variants)
+                // ================= VARIANT VALIDATION =================
+
+                if (dto.ProductType == ProductType.VariantMatrix && dto.Variants.Any())
                 {
-                    var sku = v.ProductCode?.Trim();
+                    var duplicateCombinations = dto.Variants
+                        .GroupBy(v => new
+                        {
+                            Class = v.Class?.Trim().ToLower(),
+                            Style = v.Style?.Trim().ToLower(),
+                            Material = v.Material?.Trim().ToLower(),
+                            Color = v.Color?.Trim().ToLower(),
+                            Size = v.Size?.Trim().ToLower()
+                        })
+                        .Where(g => g.Count() > 1)
+                        .ToList();
 
-                    if (string.IsNullOrWhiteSpace(sku))
-                        throw new ValidationException("SKU / ProductCode is required");
+                    if (duplicateCombinations.Any())
+                        throw new ValidationException("Duplicate variant combination detected.");
 
-                    bool skuExists = _context.ProductVariants.Any(pv =>
-                        pv.ProductCode.ToLower() == sku.ToLower());
+                    foreach (var v in dto.Variants)
+                    {
+                        var sku = v.ProductCode?.Trim();
 
-                    if (skuExists)
-                        throw new ValidationException($"SKU already exists: {sku}");
+                        if (string.IsNullOrWhiteSpace(sku))
+                            throw new ValidationException("SKU / ProductCode is required");
+
+                        bool skuExists = _context.ProductVariants.Any(pv =>
+                            pv.ProductCode.ToLower() == sku.ToLower());
+
+                        if (skuExists)
+                            throw new ValidationException($"SKU already exists: {sku}");
+                    }
                 }
 
-                // 2️⃣ Create Product
+                // ================= CREATE PRODUCT =================
+
                 var product = new Product
                 {
                     Name = dto.Name,
@@ -352,6 +368,7 @@ namespace ClientEcommerce.API.Services
                     CategoryId = dto.CategoryId,
                     BrandId = dto.BrandId,
                     Description = dto.Description,
+                    ProductType = dto.ProductType, // ✅ IMPORTANT ADD
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow
                 };
@@ -359,7 +376,8 @@ namespace ClientEcommerce.API.Services
                 _context.Products.Add(product);
                 _context.SaveChanges();
 
-                // 3️⃣ Add Images
+                // ================= ADD IMAGES =================
+
                 for (int i = 0; i < dto.ImageUrls.Count; i++)
                 {
                     _context.ProductImages.Add(new ProductImage
@@ -370,24 +388,30 @@ namespace ClientEcommerce.API.Services
                     });
                 }
 
-                // 4️⃣ Add Variants
-                foreach (var v in dto.Variants)
+                // ================= ADD VARIANTS =================
+
+                if (dto.ProductType == ProductType.VariantMatrix)
                 {
-                    _context.ProductVariants.Add(new ProductVariant
+                    foreach (var v in dto.Variants)
                     {
-                        ProductId = product.Id,
-                        Class = v.Class?.Trim(),
-                        Style = v.Style?.Trim(),
-                        Material = v.Material?.Trim(),
-                        Color = v.Color?.Trim(),
-                        Size = v.Size?.Trim(),
-                        ProductCode = v.ProductCode?.Trim(),
-                        Price = v.Price,
-                        Stock = v.Stock
-                    });
+                        _context.ProductVariants.Add(new ProductVariant
+                        {
+                            ProductId = product.Id,
+                            Class = v.Class?.Trim(),
+                            Style = v.Style?.Trim(),
+                            Material = v.Material?.Trim(),
+                            Color = v.Color?.Trim(),
+                            Size = v.Size?.Trim(),
+                            ProductCode = v.ProductCode?.Trim(),
+                            Price = v.Price,
+                            Stock = v.Stock
+                        });
+                    }
                 }
-                // 5️⃣ Add Components
-                if (dto.Components != null && dto.Components.Any())
+
+                // ================= ADD COMPONENTS =================
+
+                if (dto.ProductType == ProductType.Kit && dto.Components != null && dto.Components.Any())
                 {
                     foreach (var c in dto.Components)
                     {
@@ -401,13 +425,12 @@ namespace ClientEcommerce.API.Services
                     }
                 }
 
+                // ================= SAVE =================
 
                 _context.SaveChanges();
 
-                // ✅ 1. Commit DB transaction
                 transaction.Commit();
 
-                // ✅ 2. Invalidate product cache
                 IncrementCacheVersion();
             }
             catch
@@ -416,8 +439,6 @@ namespace ClientEcommerce.API.Services
                 throw;
             }
         }
-
-
 
 
 
@@ -499,6 +520,7 @@ namespace ClientEcommerce.API.Services
 
             IncrementCacheVersion();
         }
+
 
         // ===========================
         // ADMIN – TOGGLE PRODUCT

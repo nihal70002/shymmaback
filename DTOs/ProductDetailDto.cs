@@ -1,4 +1,6 @@
-﻿namespace ClientEcommerce.API.DTOs
+﻿using ClientEcommerce.API.Enum;
+
+namespace ClientEcommerce.API.DTOs
 {
     public class ProductDetailDto
     {
@@ -9,8 +11,8 @@
         public string? NameArabic { get; set; }
         public int CategoryId { get; set; }        // ✅ FIX
         public required string CategoryName { get; set; }   // ✅ FIX
-
-        public required string Description { get; set; }
+        public ProductType ProductType { get; set; }
+        public string? Description { get; set; }
         public List<string> ImageUrls { get; set; } = [];
         public string PrimaryImageUrl { get; set; }
 

@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using ClientEcommerce.API.Enum;
 
 namespace ClientEcommerce.API.Models
 {
@@ -11,9 +12,9 @@ namespace ClientEcommerce.API.Models
         public int CategoryId { get; set; }
         public Category Category { get; set; } = null!;
         public string? NameArabic { get; set; }
-        public required string Description { get; set; }
+        public string? Description { get; set; }
         public ICollection<ProductImage> Images { get; set; } = [];
-
+        public ProductType ProductType { get; set; }
 
         public bool IsActive { get; set; } = true;
         public int BrandId { get; set; }
