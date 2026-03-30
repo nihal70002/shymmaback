@@ -101,6 +101,7 @@ namespace ClientEcommerce.API.Services
                     ProductName = i.ProductVariant.Product.Name,
                     Size = i.ProductVariant.Size,
                     Quantity = i.Quantity,
+                    ProductId = i.ProductVariant.ProductId,
                     Price = i.Price,
 
                     // ✅ Primary product image

@@ -1,17 +1,16 @@
-﻿namespace ClientEcommerce.API.DTOs
+﻿public class CartItemDto
 {
-    public class CartItemDto
-    {
-        public int ProductVariantId { get; set; }
+    public int ProductId { get; set; }   // ✅ ADD THIS
 
-        public required string ProductName { get; set; }
+    public int ProductVariantId { get; set; }
 
-        public required string Size { get; set; }
+    public required string ProductName { get; set; }
 
-        public int Quantity { get; set; }
+    public required string Size { get; set; }
 
-        public decimal Price { get; set; }
+    public int Quantity { get; set; }
 
-        public required string ImageUrl { get; set; }   // 🔴 ADDED
-    }
+    public decimal Price { get; set; }
+
+    public required string ImageUrl { get; set; }
 }

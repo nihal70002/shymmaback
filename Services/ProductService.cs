@@ -278,6 +278,7 @@ namespace ClientEcommerce.API.Services
                     Style = v.Style,
                     Material = v.Material,
                     Color = v.Color,
+                    ProductCode = v.ProductCode,
 
                     Price = v.Price,
                     AvailableStock = v.Stock
@@ -474,6 +475,7 @@ namespace ClientEcommerce.API.Services
             product.CategoryId = dto.CategoryId;
             product.BrandId = dto.BrandId;
             product.Description = dto.Description;
+            product.ProductType = dto.ProductType;
 
             // ================= UPDATE IMAGES =================
 
@@ -683,6 +685,7 @@ namespace ClientEcommerce.API.Services
                         CategoryId = dto.CategoryId,
                         BrandId = dto.BrandId,
                         Description = dto.Description,
+                        ProductType = dto.ProductType,
                         IsActive = true,
                         CreatedAt = DateTime.UtcNow
                     };
