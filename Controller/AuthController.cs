@@ -176,7 +176,7 @@ namespace ClientEcommerce.API.Controllers
                 audience: _config["Jwt:Audience"],
                 claims: claims,
                 expires: DateTime.UtcNow.AddMinutes(
-                    Convert.ToDouble(_config["Jwt:DurationInMinutes"])
+                    Convert.ToDouble(_config["Jwt:ExpiresInMinutes"])
                 ),
                 signingCredentials: creds
             );
