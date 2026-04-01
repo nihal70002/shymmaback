@@ -320,12 +320,8 @@ namespace ClientEcommerce.API.Services
 
                 // ================= PRODUCT TYPE VALIDATION =================
 
-                if (dto.ProductType == ProductType.Kit && dto.Variants.Any())
-                    throw new ValidationException("Kit products cannot contain variants");
 
-                if (dto.ProductType == ProductType.VariantMatrix && dto.Components.Any())
-                    throw new ValidationException("Variant matrix products cannot contain components");
-
+               
                 // ================= VARIANT VALIDATION =================
 
                 if (dto.ProductType == ProductType.VariantMatrix && dto.Variants.Any())
@@ -391,7 +387,7 @@ namespace ClientEcommerce.API.Services
 
                 // ================= ADD VARIANTS =================
 
-                if (dto.ProductType == ProductType.VariantMatrix)
+                if (dto.Variants != null && dto.Variants.Any())
                 {
                     foreach (var v in dto.Variants)
                     {
@@ -644,17 +640,15 @@ namespace ClientEcommerce.API.Services
                 foreach (var dto in products)
                 {
                     // ---------- BASIC VALIDATION ----------
+
                     var category = _context.Categories
-    .FirstOrDefault(c => c.Id == dto.CategoryId);
+                        .FirstOrDefault(c => c.Id == dto.CategoryId);
 
                     if (category == null)
                         throw new ValidationException($"Invalid category for product: {dto.Name}");
 
                     if (category.ParentCategoryId == null)
                         throw new ValidationException($"Product must belong to subcategory: {dto.Name}");
-
-
-
 
                     if (!_context.Brands.Any(b => b.BrandId == dto.BrandId))
                         throw new ValidationException($"Invalid brand for product: {dto.Name}");
@@ -663,22 +657,27 @@ namespace ClientEcommerce.API.Services
                         throw new ValidationException($"Maximum 5 images allowed for product: {dto.Name}");
 
                     // ---------- VARIANT COMBINATION VALIDATION ----------
-                    var duplicateCombinations = dto.Variants
-                        .GroupBy(v => new
-                        {
-                            Class = v.Class?.Trim().ToLower(),
-                            Style = v.Style?.Trim().ToLower(),
-                            Material = v.Material?.Trim().ToLower(),
-                            Color = v.Color?.Trim().ToLower(),
-                            Size = v.Size?.Trim().ToLower()
-                        })
-                        .Where(g => g.Count() > 1)
-                        .ToList();
 
-                    if (duplicateCombinations.Any())
-                        throw new ValidationException($"Duplicate variant combinations found in product: {dto.Name}");
+                    if (dto.Variants != null && dto.Variants.Any())
+                    {
+                        var duplicateCombinations = dto.Variants
+                            .GroupBy(v => new
+                            {
+                                Class = v.Class?.Trim().ToLower(),
+                                Style = v.Style?.Trim().ToLower(),
+                                Material = v.Material?.Trim().ToLower(),
+                                Color = v.Color?.Trim().ToLower(),
+                                Size = v.Size?.Trim().ToLower()
+                            })
+                            .Where(g => g.Count() > 1)
+                            .ToList();
+
+                        if (duplicateCombinations.Any())
+                            throw new ValidationException($"Duplicate variant combinations found in product: {dto.Name}");
+                    }
 
                     // ---------- CREATE PRODUCT ----------
+
                     var product = new Product
                     {
                         Name = dto.Name,
@@ -694,6 +693,7 @@ namespace ClientEcommerce.API.Services
                     _context.SaveChanges(); // get product.Id
 
                     // ---------- ADD IMAGES ----------
+
                     if (dto.ImageUrls != null && dto.ImageUrls.Any())
                     {
                         bool isPrimary = true;
@@ -711,32 +711,52 @@ namespace ClientEcommerce.API.Services
                         }
                     }
 
-                    // ---------- ADD VARIANTS ----------
-                    foreach (var v in dto.Variants)
+                    // ---------- ADD VARIANTS (NOW WORKS FOR KIT + VARIANT MATRIX) ----------
+
+                    if (dto.Variants != null && dto.Variants.Any())
                     {
-                        var sku = v.ProductCode?.Trim();
-                        if (string.IsNullOrWhiteSpace(sku))
-                            throw new ValidationException($"SKU is required in product: {dto.Name}");
-
-                        bool skuExists = _context.ProductVariants
-                            .Any(pv => pv.ProductCode.ToLower() == sku.ToLower());
-
-                        if (skuExists)
-                            throw new ValidationException($"Duplicate SKU detected: {sku}");
-
-                        _context.ProductVariants.Add(new ProductVariant
+                        foreach (var v in dto.Variants)
                         {
-                            ProductId = product.Id,
-                            Class = v.Class?.Trim(),
-                            Style = v.Style?.Trim(),
-                            Material = v.Material?.Trim(),
-                            Color = v.Color?.Trim(),
-                            Size = v.Size?.Trim(),
-                            ProductCode = sku,
-                            Price = v.Price,
+                            var sku = v.ProductCode?.Trim();
 
-                            LowStockThreshold = 10
-                        });
+                            if (string.IsNullOrWhiteSpace(sku))
+                                throw new ValidationException($"SKU is required in product: {dto.Name}");
+
+                            bool skuExists = _context.ProductVariants
+                                .Any(pv => pv.ProductCode.ToLower() == sku.ToLower());
+
+                            if (skuExists)
+                                throw new ValidationException($"Duplicate SKU detected: {sku}");
+
+                            _context.ProductVariants.Add(new ProductVariant
+                            {
+                                ProductId = product.Id,
+                                Class = v.Class?.Trim(),
+                                Style = v.Style?.Trim(),
+                                Material = v.Material?.Trim(),
+                                Color = v.Color?.Trim(),
+                                Size = v.Size?.Trim(),
+                                ProductCode = sku,
+                                Price = v.Price,
+                                LowStockThreshold = 10
+                            });
+                        }
+                    }
+
+                    // ---------- ADD COMPONENTS (NEW SUPPORT FOR KIT PRODUCTS) ----------
+
+                    if (dto.Components != null && dto.Components.Any())
+                    {
+                        foreach (var c in dto.Components)
+                        {
+                            _context.ProductComponents.Add(new ProductComponent
+                            {
+                                ProductId = product.Id,
+                                CatNo = c.CatNo,
+                                InstrumentName = c.InstrumentName,
+                                Units = c.Units
+                            });
+                        }
                     }
                 }
 
@@ -751,7 +771,6 @@ namespace ClientEcommerce.API.Services
                 throw;
             }
         }
-
 
 
 
