@@ -5,6 +5,7 @@ namespace ClientEcommerce.API.DTOs
     public class ProductDetailDto
     {
         public int ProductId { get; set; }
+        public int BrandId { get; set; }
 
         public required string Name { get; set; }
         public string ProductCode { get; set; }
