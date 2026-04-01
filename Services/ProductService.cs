@@ -244,6 +244,7 @@ namespace ClientEcommerce.API.Services
                 ProductId = product.Id,
                 Name = product.Name,
                 ProductType = product.ProductType,
+                BrandId = product.BrandId,
                 NameArabic = product.NameArabic,
                 CategoryId = product.CategoryId,
                 ProductCode = product.ProductCode,
