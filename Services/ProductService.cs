@@ -216,7 +216,7 @@ namespace ClientEcommerce.API.Services
                 JsonSerializer.Serialize(result),
                 new DistributedCacheEntryOptions
                 {
-                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(15)
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1)
                 });
 
             return result;
