@@ -125,7 +125,7 @@ namespace ClientEcommerce.API.Services
                 .Where(p => p.IsActive);
 
             // 🔹 CATEGORY FILTER (2-level hierarchy support)
-            // 🔹 CATEGORY FILTER (2-level hierarchy support)
+            // 🔹 CATEGORY FILTER (correct hierarchy filtering)
             if (categoryIds != null && categoryIds.Any())
             {
                 var selectedCategories = _context.Categories
@@ -148,12 +148,19 @@ namespace ClientEcommerce.API.Services
                     .Select(c => c.Id)
                     .ToList();
 
-                var finalCategoryIds = categoryIds
+                var finalCategoryIds = subCategoryIds
                     .Concat(childrenOfMain)
-                    .Distinct()
                     .ToList();
 
-                query = query.Where(p => finalCategoryIds.Contains(p.CategoryId));
+                // 🔥 IMPORTANT FIX
+                if (!finalCategoryIds.Any())
+                {
+                    query = query.Where(p => false);
+                }
+                else
+                {
+                    query = query.Where(p => finalCategoryIds.Contains(p.CategoryId));
+                }
             }
 
             // 🔹 BRAND FILTER
