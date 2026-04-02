@@ -100,15 +100,18 @@ namespace ClientEcommerce.API.Services
                     ProductVariantId = i.ProductVariantId,
                     ProductName = i.ProductVariant.Product.Name,
                     Size = i.ProductVariant.Size,
+                    Material = i.ProductVariant.Material,
+                    Class = i.ProductVariant.Class,
+                    Color = i.ProductVariant.Color,
+                    ProductCode = i.ProductVariant.ProductCode,
                     Quantity = i.Quantity,
                     ProductId = i.ProductVariant.ProductId,
                     Price = i.Price,
 
-                    // ✅ Primary product image
                     ImageUrl = i.ProductVariant.Product.Images
-                        .OrderByDescending(img => img.IsPrimary)
-                        .Select(img => img.ImageUrl)
-                        .FirstOrDefault()
+        .OrderByDescending(img => img.IsPrimary)
+        .Select(img => img.ImageUrl)
+        .FirstOrDefault()
                 })
                 .ToList();
         }
