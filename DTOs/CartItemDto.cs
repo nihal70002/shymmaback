@@ -6,7 +6,7 @@
 
     public required string ProductName { get; set; }
 
-    public required string Size { get; set; }
+    public string? Size { get; set; }
 
     public string? Material { get; set; }   // ✅ ADD THIS
 
