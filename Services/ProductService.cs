@@ -125,6 +125,7 @@ namespace ClientEcommerce.API.Services
                 .Where(p => p.IsActive);
 
             // 🔹 CATEGORY FILTER (2-level hierarchy support)
+            // 🔹 CATEGORY FILTER (2-level hierarchy support)
             if (categoryIds != null && categoryIds.Any())
             {
                 var selectedCategories = _context.Categories
@@ -147,7 +148,7 @@ namespace ClientEcommerce.API.Services
                     .Select(c => c.Id)
                     .ToList();
 
-                var finalCategoryIds = subCategoryIds
+                var finalCategoryIds = categoryIds
                     .Concat(childrenOfMain)
                     .Distinct()
                     .ToList();
