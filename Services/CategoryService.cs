@@ -27,6 +27,7 @@ namespace ClientEcommerce.API.Services
     {
         Id = c.Id,
         Name = c.Name,
+        Slug = c.Slug,
         IsActive = c.IsActive,
         ParentCategoryId = c.ParentCategoryId,
         ImageUrl = c.ImageUrl // 🔥 ADD THIS
