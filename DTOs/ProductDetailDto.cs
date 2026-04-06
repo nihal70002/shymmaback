@@ -1,4 +1,4 @@
-﻿using ClientEcommerce.API.Enum;
+using ClientEcommerce.API.Enum;
 
 namespace ClientEcommerce.API.DTOs
 {
@@ -15,6 +15,7 @@ namespace ClientEcommerce.API.DTOs
         public ProductType ProductType { get; set; }
         public string? Description { get; set; }
         public List<string> ImageUrls { get; set; } = [];
+        public List<string> VideoUrls { get; set; } = [];
         public string PrimaryImageUrl { get; set; }
 
         public List<ProductComponentDto> Components { get; set; }

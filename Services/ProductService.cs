@@ -1,4 +1,4 @@
-﻿using ClientEcommerce.API.Data;
+using ClientEcommerce.API.Data;
 using ClientEcommerce.API.DTOs;
 using ClientEcommerce.API.Enum;
 using ClientEcommerce.API.Models;
@@ -242,6 +242,7 @@ namespace ClientEcommerce.API.Services
     .Include(p => p.Category)
     .Include(p => p.Variants)
     .Include(p => p.Images)
+    .Include(p => p.Videos)
     .Include(p => p.Components)   // ✅ ADD THIS LINE
     .FirstOrDefault(p => p.Id == productId && p.IsActive);
             if (product == null) return null;
@@ -263,6 +264,7 @@ namespace ClientEcommerce.API.Services
                     .OrderByDescending(i => i.IsPrimary)
                     .Select(i => i.ImageUrl)
                     .ToList(),
+                VideoUrls = product.Videos?.Select(v => v.VideoUrl).ToList() ?? new List<string>(),
                 Components = product.Components?
     .Select(c => new ProductComponentDto
     {
@@ -394,6 +396,20 @@ namespace ClientEcommerce.API.Services
                     });
                 }
 
+                // ================= ADD VIDEOS =================
+
+                if (dto.VideoUrls != null && dto.VideoUrls.Any())
+                {
+                    foreach (var videoUrl in dto.VideoUrls)
+                    {
+                        _context.ProductVideos.Add(new ProductVideo
+                        {
+                            ProductId = product.Id,
+                            VideoUrl = videoUrl
+                        });
+                    }
+                }
+
                 // ================= ADD VARIANTS =================
 
                 if (dto.Variants != null && dto.Variants.Any())
@@ -499,6 +515,24 @@ namespace ClientEcommerce.API.Services
                     ImageUrl = dto.ImageUrls[i],
                     IsPrimary = i == 0
                 });
+            }
+
+            // ================= UPDATE VIDEOS =================
+
+            _context.ProductVideos.RemoveRange(
+                _context.ProductVideos.Where(v => v.ProductId == productId)
+            );
+
+            if (dto.VideoUrls != null && dto.VideoUrls.Any())
+            {
+                foreach (var videoUrl in dto.VideoUrls)
+                {
+                    _context.ProductVideos.Add(new ProductVideo
+                    {
+                        ProductId = productId,
+                        VideoUrl = videoUrl
+                    });
+                }
             }
 
             // ================= UPDATE COMPONENTS =================
@@ -717,6 +751,20 @@ namespace ClientEcommerce.API.Services
                             });
 
                             isPrimary = false;
+                        }
+                    }
+
+                    // ---------- ADD VIDEOS ----------
+
+                    if (dto.VideoUrls != null && dto.VideoUrls.Any())
+                    {
+                        foreach (var videoUrl in dto.VideoUrls)
+                        {
+                            _context.ProductVideos.Add(new ProductVideo
+                            {
+                                ProductId = product.Id,
+                                VideoUrl = videoUrl
+                            });
                         }
                     }
 

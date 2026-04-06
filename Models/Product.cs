@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations.Schema;
 using ClientEcommerce.API.Enum;
 
 namespace ClientEcommerce.API.Models
@@ -14,6 +14,7 @@ namespace ClientEcommerce.API.Models
         public string? NameArabic { get; set; }
         public string? Description { get; set; }
         public ICollection<ProductImage> Images { get; set; } = [];
+        public ICollection<ProductVideo> Videos { get; set; } = [];
         public ProductType ProductType { get; set; }
 
         public bool IsActive { get; set; } = true;

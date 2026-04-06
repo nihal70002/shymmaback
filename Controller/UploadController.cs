@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
 [Route("api/upload")]
@@ -19,5 +19,14 @@ public class UploadController : ControllerBase
 
         var url = await _cloudinary.UploadImageAsync(file);
         return Ok(new { imageUrl = url });
+    }
+    [HttpPost("video")]
+    public async Task<IActionResult> UploadVideo(IFormFile file)
+    {
+        if (file == null)
+            return BadRequest("No video selected");
+
+        var url = await _cloudinary.UploadVideoAsync(file);
+        return Ok(new { videoUrl = url });
     }
 }

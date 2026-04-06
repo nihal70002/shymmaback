@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ClientEcommerce.API.Models;
 
 namespace ClientEcommerce.API.Data
@@ -17,6 +17,7 @@ namespace ClientEcommerce.API.Data
         public DbSet<Address> Addresses { get; set; }
         public DbSet<Cart> Carts { get; set; }
         public DbSet<ProductImage> ProductImages { get; set; }
+        public DbSet<ProductVideo> ProductVideos { get; set; }
 
         public DbSet<CartItem> CartItems { get; set; }
         public DbSet<Brand> Brands { get; set; }
@@ -52,6 +53,12 @@ namespace ClientEcommerce.API.Data
                 .HasOne(pi => pi.Product)
                 .WithMany(p => p.Images)
                 .HasForeignKey(pi => pi.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ProductVideo>()
+                .HasOne(pv => pv.Product)
+                .WithMany(p => p.Videos)
+                .HasForeignKey(pv => pv.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<ProductVariant>()

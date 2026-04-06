@@ -1,4 +1,4 @@
-﻿using CloudinaryDotNet;
+using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 
 public class CloudinaryService : ICloudinaryService
@@ -55,4 +55,34 @@ public class CloudinaryService : ICloudinaryService
         return result.SecureUrl.ToString();
     }
 
+    public async Task<string> UploadVideoAsync(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            throw new Exception("File is empty");
+
+        using var stream = file.OpenReadStream();
+
+        var uploadParams = new VideoUploadParams
+        {
+            File = new FileDescription(file.FileName, stream),
+            Folder = "products-videos",
+            UseFilename = true,
+            UniqueFilename = true,
+            Overwrite = false
+        };
+
+        var result = await _cloudinary.UploadAsync(uploadParams);
+
+        if (result.Error != null)
+        {
+            throw new Exception($"Cloudinary error: {result.Error.Message}");
+        }
+
+        if (result.SecureUrl == null)
+        {
+            throw new Exception("Cloudinary upload failed: SecureUrl is null");
+        }
+
+        return result.SecureUrl.ToString();
+    }
 }
