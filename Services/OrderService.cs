@@ -96,10 +96,10 @@ namespace ClientEcommerce.API.Services
 
                         if (detailedOrder?.OrderItems != null && detailedOrder.OrderItems.Count > 0)
                         {
-                            foreach (var oi in detailedOrder.OrderItems)
+                            foreach (var oi in detailedOrder.OrderItems)  
                             {
                                 var productName = oi.ProductVariant?.Product?.Name ?? "";
-                                var variantName = oi.ProductVariant?.VariantName ?? "";
+                                var variantName = oi.ProductVariant?.Size ?? "";
                                 sb.AppendLine($"- {productName} {variantName} | Qty: {oi.Quantity} | Price: {oi.UnitPrice}");
                             }
                         }
