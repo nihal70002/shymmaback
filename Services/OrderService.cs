@@ -5,6 +5,7 @@ using ClientEcommerce.API.DTOs.Admin;
 using ClientEcommerce.API.Enum;
 using ClientEcommerce.API.Models;
 using ClientEcommerce.API.Helpers;
+using System.Text;
 
 
 namespace ClientEcommerce.API.Services
@@ -65,15 +66,45 @@ namespace ClientEcommerce.API.Services
 
                 try
                 {
-                    var userPhone = await _context.Users
-                        .Where(u => u.Id == userId)
-                        .Select(u => u.PhoneNumber)
-                        .FirstOrDefaultAsync();
+                    var detailedOrder = await _context.Orders
+                        .AsNoTracking()
+                        .Include(o => o.User)
+                        .Include(o => o.OrderItems)
+                            .ThenInclude(oi => oi.ProductVariant)
+                                .ThenInclude(pv => pv.Product)
+                        .FirstOrDefaultAsync(o => o.Id == order.Id);
+
+                    var userPhone = detailedOrder?.User?.PhoneNumber;
+                    var userName = detailedOrder?.User?.Name;
+                    var userEmail = detailedOrder?.User?.Email;
+                    var userCompany = detailedOrder?.User?.CompanyName;
 
                     var adminNumbers = await _whatsappService.GetAdminWhatsappNumbers();
                     if (adminNumbers.Count > 0)
                     {
-                        var msg = $"New order placed. OrderId: {order.Id}, Items: {order.OrderItems.Count}, Total: {order.TotalAmount}";
+                        var sb = new StringBuilder();
+                        sb.AppendLine("New order placed");
+                        sb.AppendLine($"OrderId: {order.Id}");
+                        sb.AppendLine($"Total: {order.TotalAmount}");
+                        sb.AppendLine($"Items: {order.OrderItems.Count}");
+                        sb.AppendLine("--- Customer ---");
+                        if (!string.IsNullOrWhiteSpace(userName)) sb.AppendLine($"Name: {userName}");
+                        if (!string.IsNullOrWhiteSpace(userCompany)) sb.AppendLine($"Company: {userCompany}");
+                        if (!string.IsNullOrWhiteSpace(userPhone)) sb.AppendLine($"Phone: {userPhone}");
+                        if (!string.IsNullOrWhiteSpace(userEmail)) sb.AppendLine($"Email: {userEmail}");
+                        sb.AppendLine("--- Items ---");
+
+                        if (detailedOrder?.OrderItems != null && detailedOrder.OrderItems.Count > 0)
+                        {
+                            foreach (var oi in detailedOrder.OrderItems)
+                            {
+                                var productName = oi.ProductVariant?.Product?.Name ?? "";
+                                var variantName = oi.ProductVariant?.VariantName ?? "";
+                                sb.AppendLine($"- {productName} {variantName} | Qty: {oi.Quantity} | Price: {oi.UnitPrice}");
+                            }
+                        }
+
+                        var msg = sb.ToString().Trim();
                         foreach (var adminTo in adminNumbers)
                         {
                             await _whatsappService.SendWhatsapp(adminTo, msg);
