@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Text;
 using Twilio;
 using Twilio.Rest.Api.V2010.Account;
 using Twilio.Types;
@@ -46,8 +47,19 @@ namespace ClientEcommerce.API.Services
                 return;
             }
 
-            var toNormalized = NormalizeWhatsappAddress(to);
-            var fromNormalized = NormalizeWhatsappAddress(from);
+            string toNormalized;
+            string fromNormalized;
+
+            try
+            {
+                toNormalized = NormalizeWhatsappAddress(to);    
+                fromNormalized = NormalizeWhatsappAddress(from);
+            }
+            catch (Exception ex)
+            {
+                System.Console.WriteLine($"[WhatsApp invalid number] To={to}, From={from}. {ex.Message}");
+                throw;
+            }
 
             try
             {
@@ -70,8 +82,43 @@ namespace ClientEcommerce.API.Services
 
         private static string NormalizeWhatsappAddress(string value)
         {
+            if (string.IsNullOrWhiteSpace(value))
+                throw new ArgumentException("Phone number is empty");
+
             var trimmed = value.Trim();
-            return trimmed.StartsWith("whatsapp:") ? trimmed : $"whatsapp:{trimmed}";
+            if (trimmed.StartsWith("whatsapp:", StringComparison.OrdinalIgnoreCase))
+                trimmed = trimmed.Substring("whatsapp:".Length);
+
+            // Keep only digits and '+'
+            var sb = new StringBuilder();
+            foreach (var ch in trimmed)
+            {
+                if (char.IsDigit(ch) || ch == '+')
+                    sb.Append(ch);
+            }
+
+            var cleaned = sb.ToString();
+
+            // If already E.164
+            if (cleaned.StartsWith("+") && cleaned.Length >= 11 && cleaned.Length <= 16)
+                return $"whatsapp:{cleaned}";
+
+            // India defaults (per your requirement)
+            var digitsOnly = new string(cleaned.Where(char.IsDigit).ToArray());
+
+            // 10-digit mobile => +91
+            if (digitsOnly.Length == 10)
+                return $"whatsapp:+91{digitsOnly}";
+
+            // 91xxxxxxxxxx (12 digits) => +91...
+            if (digitsOnly.Length == 12 && digitsOnly.StartsWith("91"))
+                return $"whatsapp:+{digitsOnly}";
+
+            // 0xxxxxxxxxx (11 digits) => +91...
+            if (digitsOnly.Length == 11 && digitsOnly.StartsWith("0"))
+                return $"whatsapp:+91{digitsOnly.Substring(1)}";
+
+            throw new ArgumentException($"Invalid phone number format after cleaning: '{digitsOnly}'");
         }
     }
 }

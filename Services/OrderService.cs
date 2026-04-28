@@ -65,6 +65,11 @@ namespace ClientEcommerce.API.Services
 
                 try
                 {
+                    var userPhone = await _context.Users
+                        .Where(u => u.Id == userId)
+                        .Select(u => u.PhoneNumber)
+                        .FirstOrDefaultAsync();
+
                     var adminNumbers = await _whatsappService.GetAdminWhatsappNumbers();
                     if (adminNumbers.Count > 0)
                     {
@@ -73,6 +78,22 @@ namespace ClientEcommerce.API.Services
                         {
                             await _whatsappService.SendWhatsapp(adminTo, msg);
                         }
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(userPhone))
+                    {
+                        var customerMsg = $"Your order has been placed successfully. OrderId: {order.Id}, Total: {order.TotalAmount}";
+                        await _whatsappService.SendWhatsapp(userPhone, customerMsg);
+                    }
+                    else
+                    {
+                        System.Console.WriteLine($"[WhatsApp customer skipped] UserId={userId} has no phone number.");
+                    }
+
+                    var debugTo = Environment.GetEnvironmentVariable("WHATSAPP_DEBUG_TO");
+                    if (!string.IsNullOrWhiteSpace(debugTo))
+                    {
+                        await _whatsappService.SendWhatsapp(debugTo, "Test message after order placement");
                     }
                 }
                 catch (Exception ex)
