@@ -63,14 +63,21 @@ namespace ClientEcommerce.API.Services
                 _context.SaveChanges();
                 transaction.Commit();
 
-                var adminNumbers = await _whatsappService.GetAdminWhatsappNumbers();
-                if (adminNumbers.Count > 0)
+                try
                 {
-                    var msg = $"New order placed. OrderId: {order.Id}, Items: {order.OrderItems.Count}, Total: {order.TotalAmount}";
-                    foreach (var adminTo in adminNumbers)
+                    var adminNumbers = await _whatsappService.GetAdminWhatsappNumbers();
+                    if (adminNumbers.Count > 0)
                     {
-                        await _whatsappService.SendWhatsapp(adminTo, msg);
+                        var msg = $"New order placed. OrderId: {order.Id}, Items: {order.OrderItems.Count}, Total: {order.TotalAmount}";
+                        foreach (var adminTo in adminNumbers)
+                        {
+                            await _whatsappService.SendWhatsapp(adminTo, msg);
+                        }
                     }
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine($"[WhatsApp error] Failed to notify admin for OrderId={order.Id}. {ex}");
                 }
             }
             catch

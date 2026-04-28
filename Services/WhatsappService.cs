@@ -49,13 +49,23 @@ namespace ClientEcommerce.API.Services
             var toNormalized = NormalizeWhatsappAddress(to);
             var fromNormalized = NormalizeWhatsappAddress(from);
 
-            TwilioClient.Init(accountSid, authToken);
+            try
+            {
+                TwilioClient.Init(accountSid, authToken);
 
-            await MessageResource.CreateAsync(
-                from: new PhoneNumber(fromNormalized),
-                to: new PhoneNumber(toNormalized),
-                body: message
-            );
+                var result = await MessageResource.CreateAsync(
+                    from: new PhoneNumber(fromNormalized),
+                    to: new PhoneNumber(toNormalized),
+                    body: message
+                );
+
+                System.Console.WriteLine($"[WhatsApp sent] Sid={result.Sid}, To={toNormalized}");
+            }
+            catch (Exception ex)
+            {
+                System.Console.WriteLine($"[WhatsApp send failed] To={toNormalized}, From={fromNormalized}. {ex}");
+                throw;
+            }
         }
 
         private static string NormalizeWhatsappAddress(string value)
