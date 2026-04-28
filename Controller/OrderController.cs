@@ -23,10 +23,10 @@ namespace ClientEcommerce.API.Controllers
         // ==========================
         [HttpPost]
         [Authorize(Roles = "User")]
-        public IActionResult PlaceOrder([FromBody] PlaceOrderByCustomerDto dto)
+        public async Task<IActionResult> PlaceOrder([FromBody] PlaceOrderByCustomerDto dto)
         {
             int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            _orderService.PlaceOrder(userId, dto);
+            await _orderService.PlaceOrder(userId, dto);
             return Ok(new { message = "Order placed successfully" });
         }
 

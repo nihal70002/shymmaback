@@ -8,7 +8,7 @@ namespace ClientEcommerce.API.Services
         // ===========================
         // CUSTOMER
         // ===========================
-        void PlaceOrder(int userId, PlaceOrderByCustomerDto dto);
+        Task PlaceOrder(int userId, PlaceOrderByCustomerDto dto);
         IEnumerable<UserOrderListDto> GetOrdersForUser(int userId);
         UserOrderDetailDto GetOrderForUser(int orderId, int userId);
         Task<OrderDetailsDto?> GetMyOrderDetailsAsync(int userId, int orderId);

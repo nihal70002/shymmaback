@@ -12,15 +12,17 @@ namespace ClientEcommerce.API.Services
     public class OrderService : IOrderService
     {
         private readonly AppDbContext _context;
+        private readonly IWhatsappService _whatsappService;
 
-        public OrderService(AppDbContext context)
+        public OrderService(AppDbContext context, IWhatsappService whatsappService)
         {
             _context = context;
+            _whatsappService = whatsappService;
         }
 
         // ================= CUSTOMER =================
 
-        public void PlaceOrder(int userId, PlaceOrderByCustomerDto dto)
+        public async Task PlaceOrder(int userId, PlaceOrderByCustomerDto dto)
         {
             using var transaction = _context.Database.BeginTransaction();
 
@@ -60,6 +62,16 @@ namespace ClientEcommerce.API.Services
                 _context.Orders.Add(order);
                 _context.SaveChanges();
                 transaction.Commit();
+
+                var adminNumbers = await _whatsappService.GetAdminWhatsappNumbers();
+                if (adminNumbers.Count > 0)
+                {
+                    var msg = $"New order placed. OrderId: {order.Id}, Items: {order.OrderItems.Count}, Total: {order.TotalAmount}";
+                    foreach (var adminTo in adminNumbers)
+                    {
+                        await _whatsappService.SendWhatsapp(adminTo, msg);
+                    }
+                }
             }
             catch
             {
