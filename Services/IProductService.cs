@@ -24,6 +24,8 @@ namespace ClientEcommerce.API.Services
 
         void UpdateProductVariant(int variantId, AdminUpdateProductVariantDto dto);
 
+        void UpsertProductVariants(int productId, List<AdminUpsertProductVariantDto> variants);
+
         void UpdateVariantStock(int variantId, int stock);
 
         void AddProductVariant(int productId, AdminCreateProductVariantDto dto);

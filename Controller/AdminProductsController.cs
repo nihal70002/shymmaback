@@ -67,6 +67,19 @@ namespace ClientEcommerce.API.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+        [HttpPut("{productId}/variants")]
+        public IActionResult UpsertVariants(int productId, List<AdminUpsertProductVariantDto> variants)
+        {
+            try
+            {
+                _productService.UpsertProductVariants(productId, variants);
+                return Ok("Variants updated successfully");
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
         [HttpPost("{productId}/variant")]
         public IActionResult AddVariant(
     int productId,

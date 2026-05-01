@@ -835,6 +835,104 @@ namespace ClientEcommerce.API.Services
 
 
 
+        public void UpsertProductVariants(int productId, List<AdminUpsertProductVariantDto> variants)
+        {
+            if (!_context.Products.Any(p => p.Id == productId))
+                throw new ValidationException("Product not found");
+
+            variants ??= [];
+
+            var cleaned = variants
+                .Where(v => !string.IsNullOrWhiteSpace(v.Size) || !string.IsNullOrWhiteSpace(v.ProductCode))
+                .Select(v => new
+                {
+                    v.VariantId,
+                    Class = v.Class?.Trim(),
+                    Style = (v.Style ?? v.Side)?.Trim(),
+                    Material = v.Material?.Trim(),
+                    Color = v.Color?.Trim(),
+                    Size = v.Size?.Trim(),
+                    Sku = v.ProductCode?.Trim(),
+                    v.Price,
+                    v.Stock
+                })
+                .ToList();
+
+            foreach (var v in cleaned)
+            {
+                if (string.IsNullOrWhiteSpace(v.Size))
+                    throw new ValidationException("Size is required");
+
+                if (string.IsNullOrWhiteSpace(v.Sku))
+                    throw new ValidationException("SKU cannot be empty");
+
+                if (v.Stock < 0)
+                    throw new ValidationException("Stock cannot be negative");
+            }
+
+            if (cleaned.GroupBy(v => new
+            {
+                Class = (v.Class ?? "").ToLower(),
+                Style = (v.Style ?? "").ToLower(),
+                Material = (v.Material ?? "").ToLower(),
+                Color = (v.Color ?? "").ToLower(),
+                Size = (v.Size ?? "").ToLower()
+            }).Any(g => g.Count() > 1))
+                throw new ValidationException("Duplicate variant combination found.");
+
+            var duplicateSku = cleaned
+                .GroupBy(v => (v.Sku ?? "").ToLower())
+                .FirstOrDefault(g => g.Count() > 1);
+
+            if (duplicateSku != null)
+                throw new ValidationException($"Duplicate SKU: {duplicateSku.First().Sku}");
+
+            var variantIds = cleaned
+                .Where(v => v.VariantId.HasValue)
+                .Select(v => v.VariantId!.Value)
+                .ToList();
+
+            var existingVariants = _context.ProductVariants
+                .Where(v => v.ProductId == productId || variantIds.Contains(v.Id))
+                .ToList();
+
+            foreach (var id in variantIds)
+            {
+                if (!existingVariants.Any(v => v.Id == id && v.ProductId == productId))
+                    throw new ValidationException("Variant not found for this product");
+            }
+
+            var normalizedSkus = cleaned.Select(v => (v.Sku ?? "").ToLower()).ToList();
+
+            if (_context.ProductVariants.Any(v =>
+                v.ProductId != productId &&
+                v.ProductCode != null &&
+                normalizedSkus.Contains(v.ProductCode.ToLower())))
+                throw new ValidationException("SKU already exists on another product.");
+
+            foreach (var item in cleaned)
+            {
+                var variant = item.VariantId.HasValue
+                    ? existingVariants.First(v => v.Id == item.VariantId.Value)
+                    : new ProductVariant { ProductId = productId };
+
+                if (!item.VariantId.HasValue)
+                    _context.ProductVariants.Add(variant);
+
+                variant.Class = item.Class;
+                variant.Style = item.Style;
+                variant.Material = item.Material;
+                variant.Color = item.Color;
+                variant.Size = item.Size;
+                variant.ProductCode = item.Sku;
+                variant.Price = item.Price;
+                variant.Stock = item.Stock;
+            }
+
+            _context.SaveChanges();
+            IncrementCacheVersion();
+        }
+
         public void UpdateVariantStock(int variantId, int stock)
         {
             var variant = _context.ProductVariants.FirstOrDefault(v => v.Id == variantId);
