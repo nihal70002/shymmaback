@@ -3,6 +3,7 @@
     public string? Size { get; set; }
     public string? Class { get; set; }
     public string? Style { get; set; }
+    public string? Side { get; set; }
     public string? Material { get; set; }
     public string? Color { get; set; }
 

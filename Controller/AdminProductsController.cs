@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ClientEcommerce.API.DTOs;
 using ClientEcommerce.API.Services;
+using System.ComponentModel.DataAnnotations;
 
 namespace ClientEcommerce.API.Controllers
 {
@@ -56,16 +57,30 @@ namespace ClientEcommerce.API.Controllers
         [HttpPut("variant/{variantId}")]
         public IActionResult UpdateVariant(int variantId, AdminUpdateProductVariantDto dto)
         {
-            _productService.UpdateProductVariant(variantId, dto);
-            return Ok("Variant updated successfully");
+            try
+            {
+                _productService.UpdateProductVariant(variantId, dto);
+                return Ok("Variant updated successfully");
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
         [HttpPost("{productId}/variant")]
         public IActionResult AddVariant(
     int productId,
     AdminCreateProductVariantDto dto)
         {
-            _productService.AddProductVariant(productId, dto);
-            return Ok("Variant added");
+            try
+            {
+                _productService.AddProductVariant(productId, dto);
+                return Ok("Variant added");
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
         [HttpGet("{productId}")]
         public IActionResult GetProduct(int productId)

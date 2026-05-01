@@ -855,7 +855,7 @@ namespace ClientEcommerce.API.Services
 
             // ---------- REQUIRED FIELD VALIDATION ----------
             var classValue = dto.Class?.Trim();
-            var style = dto.Style?.Trim();
+            var style = (dto.Style ?? dto.Side)?.Trim();
             var material = dto.Material?.Trim();
             var color = dto.Color?.Trim();
             var size = dto.Size?.Trim();
@@ -871,11 +871,11 @@ namespace ClientEcommerce.API.Services
             // ---------- COMBINATION VALIDATION ----------
             bool combinationExists = _context.ProductVariants.Any(v =>
                 v.ProductId == productId &&
-                v.Class.ToLower() == classValue.ToLower() &&
-                v.Style.ToLower() == style.ToLower() &&
-                v.Material.ToLower() == material.ToLower() &&
-                v.Color.ToLower() == color.ToLower() &&
-                v.Size.ToLower() == size.ToLower()
+                (v.Class ?? "").ToLower() == (classValue ?? "").ToLower() &&
+                (v.Style ?? "").ToLower() == (style ?? "").ToLower() &&
+                (v.Material ?? "").ToLower() == (material ?? "").ToLower() &&
+                (v.Color ?? "").ToLower() == (color ?? "").ToLower() &&
+                (v.Size ?? "").ToLower() == size.ToLower()
             );
 
             if (combinationExists)
@@ -888,7 +888,7 @@ namespace ClientEcommerce.API.Services
                 throw new ValidationException("SKU is required");
 
             bool skuExists = _context.ProductVariants.Any(v =>
-                v.ProductCode.ToLower() == sku.ToLower());
+                (v.ProductCode ?? "").ToLower() == sku.ToLower());
 
             if (skuExists)
                 throw new ValidationException($"SKU already exists: {sku}");
