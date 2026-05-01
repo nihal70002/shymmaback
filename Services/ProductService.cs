@@ -169,10 +169,23 @@ namespace ClientEcommerce.API.Services
 
             // 🔹 SEARCH FILTER (English + Arabic)
             if (!string.IsNullOrWhiteSpace(search))
+            {
+                var searchTerm = search.Trim().ToLower();
                 query = query.Where(p =>
-                    p.Name.Contains(search) ||
-                    p.NameArabic.Contains(search)
+                    p.Name.ToLower().Contains(searchTerm) ||
+                    (p.NameArabic != null && p.NameArabic.ToLower().Contains(searchTerm)) ||
+                    (p.Description != null && p.Description.ToLower().Contains(searchTerm)) ||
+                    p.Brand.BrandName.ToLower().Contains(searchTerm) ||
+                    p.Category.Name.ToLower().Contains(searchTerm) ||
+                    p.Variants.Any(v =>
+                        (v.ProductCode != null && v.ProductCode.ToLower().Contains(searchTerm)) ||
+                        (v.Size != null && v.Size.ToLower().Contains(searchTerm)) ||
+                        (v.Class != null && v.Class.ToLower().Contains(searchTerm)) ||
+                        (v.Style != null && v.Style.ToLower().Contains(searchTerm)) ||
+                        (v.Material != null && v.Material.ToLower().Contains(searchTerm)) ||
+                        (v.Color != null && v.Color.ToLower().Contains(searchTerm)))
                 );
+            }
 
             // 🔹 TOTAL COUNT (before pagination)
             var totalCount = query.Count();
