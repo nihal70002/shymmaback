@@ -105,6 +105,46 @@ namespace ClientEcommerce.API.Data
 
             modelBuilder.Entity<Order>()
                 .HasIndex(o => o.Status);
+
+            modelBuilder.Entity<Order>()
+                .HasIndex(o => o.UserId);
+
+            modelBuilder.Entity<Order>()
+                .HasIndex(o => o.OrderDate);
+
+            modelBuilder.Entity<OrderItem>()
+                .HasIndex(oi => oi.OrderId);
+
+            modelBuilder.Entity<OrderItem>()
+                .HasIndex(oi => oi.ProductVariantId);
+
+            modelBuilder.Entity<Cart>()
+                .HasIndex(c => c.UserId);
+
+            modelBuilder.Entity<CartItem>()
+                .HasIndex(ci => ci.CartId);
+
+            modelBuilder.Entity<CartItem>()
+                .HasIndex(ci => ci.ProductVariantId);
+
+            modelBuilder.Entity<Product>()
+                .HasIndex(p => p.ProductCode)
+                .IsUnique();
+
+            modelBuilder.Entity<Product>()
+                .HasIndex(p => p.CategoryId);
+
+            modelBuilder.Entity<Product>()
+                .HasIndex(p => p.BrandId);
+
+            modelBuilder.Entity<ProductImage>()
+                .HasIndex(pi => pi.ProductId);
+
+            modelBuilder.Entity<ProductVideo>()
+                .HasIndex(pv => pv.ProductId);
+
+            modelBuilder.Entity<ProductVariant>()
+                .HasIndex(v => v.ProductId);
         }
 
     }

@@ -250,33 +250,29 @@ namespace ClientEcommerce.API.Services
             _context.SaveChanges();
         }
 
-        public AdminOrderDetailDto GetOrderById(int orderId)
+        public async Task<AdminOrderDetailDto?> GetOrderByIdAsync(int orderId)
         {
-            var order = _context.Orders
-                .Include(o => o.User)
-                .Include(o => o.OrderItems)
-                    .ThenInclude(oi => oi.ProductVariant)
-                        .ThenInclude(pv => pv.Product)
-                .FirstOrDefault(o => o.Id == orderId)
-                ?? throw new Exception("Order not found");
-
-            return new AdminOrderDetailDto
-            {
-                OrderId = order.Id,
-                OrderDate = order.OrderDate,
-                Status = order.Status,
-                TotalAmount = order.TotalAmount,
-                CustomerName = order.User.Name,
-                CompanyName = order.User.CompanyName,
-                PhoneNumber = order.User.PhoneNumber,
-                Items = order.OrderItems.Select(i => new AdminOrderItemDto
+            return await _context.Orders
+                .AsNoTracking()
+                .Where(o => o.Id == orderId)
+                .Select(order => new AdminOrderDetailDto
                 {
-                    ProductName = i.ProductVariant.Product.Name,
-                    Size = i.ProductVariant.Size,
-                    Quantity = i.Quantity,
-                    UnitPrice = i.UnitPrice
-                }).ToList()
-            };
+                    OrderId = order.Id,
+                    OrderDate = order.OrderDate,
+                    Status = order.Status,
+                    TotalAmount = order.TotalAmount,
+                    CustomerName = order.User.Name,
+                    CompanyName = order.User.CompanyName,
+                    PhoneNumber = order.User.PhoneNumber,
+                    Items = order.OrderItems.Select(i => new AdminOrderItemDto
+                    {
+                        ProductName = i.ProductVariant.Product.Name,
+                        Size = i.ProductVariant.Size,
+                        Quantity = i.Quantity,
+                        UnitPrice = i.UnitPrice
+                    }).ToList()
+                })
+                .FirstOrDefaultAsync();
         }
 
 

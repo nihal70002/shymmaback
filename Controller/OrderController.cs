@@ -109,16 +109,6 @@ namespace ClientEcommerce.API.Controllers
         }
 
         // ==========================
-        // ADMIN: GET ORDER DETAILS
-        // ==========================
-        [HttpGet("{orderId}")]
-        [Authorize(Roles = "Admin")]
-        public IActionResult GetOrderById(int orderId)
-        {
-            return Ok(_orderService.GetOrderById(orderId));
-        }
-
-        // ==========================
         // ADMIN: RECENT ORDERS
         // ==========================
         [HttpGet("admin/recent")]

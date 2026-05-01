@@ -17,17 +17,14 @@ namespace ClientEcommerce.API.Controllers
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetOrderById(int id)
+        public async Task<IActionResult> GetOrderById(int id)
         {
-            try
-            {
-                var order = _orderService.GetOrderById(id);
-                return Ok(order);
-            }
-            catch (Exception ex) when (ex.Message == "Order not found")
-            {
+            var order = await _orderService.GetOrderByIdAsync(id);
+
+            if (order == null)
                 return NotFound(new { message = "Order not found" });
-            }
+
+            return Ok(order);
         }
     }
 }

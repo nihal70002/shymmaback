@@ -51,11 +51,21 @@ namespace ClientEcommerce.API.Services
         /// <summary>
         /// Admin: Get all users
         /// </summary>
-        public List<AdminUserDto> GetAllUsers()
+        public PagedResultDto<AdminUserDto> GetAllUsers(int page, int pageSize)
         {
-            return _context.Users
+            page = Math.Max(page, 1);
+            pageSize = Math.Clamp(pageSize, 1, 100);
+
+            var query = _context.Users
                 .AsNoTracking()
-                .Where(u => u.Role == "User")
+                .Where(u => u.Role == "User");
+
+            var totalCount = query.Count();
+
+            var items = query
+                .OrderByDescending(u => u.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(u => new AdminUserDto
                 {
                     UserId = u.Id,
@@ -66,6 +76,12 @@ namespace ClientEcommerce.API.Services
                     IsActive = u.IsActive
                 })
                 .ToList();
+
+            return new PagedResultDto<AdminUserDto>
+            {
+                Items = items,
+                TotalCount = totalCount
+            };
         }
 
         /// <summary>

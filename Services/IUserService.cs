@@ -7,7 +7,7 @@ namespace ClientEcommerce.API.Services
     {
         void CreateUser(CreateUserDto dto);
 
-        List<AdminUserDto> GetAllUsers();
+        PagedResultDto<AdminUserDto> GetAllUsers(int page, int pageSize);
 
         UserDetailsDto? GetUserDetails(int userId);
 

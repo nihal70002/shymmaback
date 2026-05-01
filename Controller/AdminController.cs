@@ -38,9 +38,9 @@ namespace ClientEcommerce.API.Controllers
         // ADMIN: GET ALL USERS
         // ==========================
         [HttpGet("users")]
-        public IActionResult GetAllUsers()
+        public IActionResult GetAllUsers([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            return Ok(_userService.GetAllUsers());
+            return Ok(_userService.GetAllUsers(page, pageSize));
         }
 
         // ==========================

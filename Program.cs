@@ -6,6 +6,7 @@ using ClientEcommerce.API.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Npgsql;
@@ -16,7 +17,18 @@ var builder = WebApplication.CreateBuilder(args);
 
 // ===================== SERVICES =====================
 
-builder.Services.AddControllers();
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<BrotliCompressionProvider>();
+    options.Providers.Add<GzipCompressionProvider>();
+});
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    });
 builder.Services.AddEndpointsApiExplorer();
 
 // ===================== SWAGGER =====================
@@ -103,10 +115,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = false,
-            ValidateAudience = false,
+            ValidateIssuer = true,
+            ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])
             )
@@ -131,12 +145,6 @@ builder.Services.AddScoped<IWhatsappService, WhatsappService>();
 
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddDistributedMemoryCache();
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
-        // This prevents the "Object cycle detected" 500 error
-        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
-    });
 // ===================== CLOUDINARY =====================
 
 builder.Services.Configure<CloudinarySettings>(
@@ -148,7 +156,7 @@ var app = builder.Build();
 
 // ===================== PORT FIX (Railway) =====================
 
-var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
 app.Urls.Add($"http://0.0.0.0:{port}");
 
 // ===================== MIGRATION + SEED =====================
@@ -172,7 +180,56 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    // Optional: enable in production if you want
+    app.Use(async (context, next) =>
+    {
+        if (context.Request.Path.StartsWithSegments("/swagger"))
+        {
+            var swaggerUser = builder.Configuration["Swagger:Username"];
+            var swaggerPassword = builder.Configuration["Swagger:Password"];
+            var authHeader = context.Request.Headers.Authorization.ToString();
+
+            if (string.IsNullOrWhiteSpace(swaggerUser) || string.IsNullOrWhiteSpace(swaggerPassword))
+            {
+                context.Response.StatusCode = StatusCodes.Status404NotFound;
+                return;
+            }
+
+            if (!authHeader.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase))
+            {
+                context.Response.Headers.WWWAuthenticate = "Basic";
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                return;
+            }
+
+            var encodedCredentials = authHeader["Basic ".Length..].Trim();
+            string decodedCredentials;
+
+            try
+            {
+                decodedCredentials = Encoding.UTF8.GetString(Convert.FromBase64String(encodedCredentials));
+            }
+            catch (FormatException)
+            {
+                context.Response.Headers.WWWAuthenticate = "Basic";
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                return;
+            }
+
+            var separatorIndex = decodedCredentials.IndexOf(':');
+
+            if (separatorIndex < 0 ||
+                decodedCredentials[..separatorIndex] != swaggerUser ||
+                decodedCredentials[(separatorIndex + 1)..] != swaggerPassword)
+            {
+                context.Response.Headers.WWWAuthenticate = "Basic";
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                return;
+            }
+        }
+
+        await next();
+    });
+
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
@@ -183,6 +240,7 @@ else
 
 // ⚠️ Avoid HTTPS redirect issues in Railway
 // app.UseHttpsRedirection();
+app.UseResponseCompression();
 app.UseRouting();
 app.UseCors("AllowFrontend");
 

@@ -26,7 +26,7 @@ namespace ClientEcommerce.API.Services
         void DispatchOrder(int orderId);
         void DeliverOrder(int orderId);
 
-        AdminOrderDetailDto GetOrderById(int orderId);
+        Task<AdminOrderDetailDto?> GetOrderByIdAsync(int orderId);
         IEnumerable<AdminOrderListDto> GetRecentOrders(int count);
     }
 }
