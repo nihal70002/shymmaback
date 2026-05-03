@@ -29,7 +29,7 @@ public class BrandService : IBrandService
     public void CreateBrand(CreateBrandDto dto)
     {
         if (_context.Brands.Any(b => b.BrandName == dto.BrandName))
-            throw new Exception("Brand already exists");
+            throw new BadRequestException("Brand already exists");
 
         _context.Brands.Add(new Brand
         {

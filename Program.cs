@@ -1,5 +1,6 @@
 ﻿using ClientEcommerce.API.Configurations;
 using ClientEcommerce.API.Data;
+using ClientEcommerce.API.Middleware;
 using ClientEcommerce.API.Models;
 using ClientEcommerce.API.Seed;
 using ClientEcommerce.API.Services;
@@ -30,6 +31,7 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
     });
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddHealthChecks();
 
 // ===================== SWAGGER =====================
 
@@ -150,6 +152,16 @@ builder.Services.AddDistributedMemoryCache();
 builder.Services.Configure<CloudinarySettings>(
     builder.Configuration.GetSection("Cloudinary"));
 
+// ===================== REQUEST SIZE LIMIT =====================
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = 10 * 1024 * 1024; // 10 MB
+});
+
+// ===================== HEALTH CHECK (with DB) =====================
+builder.Services.AddHealthChecks()
+    .AddNpgSql(connectionString);
+
 // ===================== BUILD =====================
 
 var app = builder.Build();
@@ -171,6 +183,8 @@ using (var scope = app.Services.CreateScope())
 
 
 // ===================== MIDDLEWARE =====================
+
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
 // 👉 Swagger only in Development (safer for production)
 if (app.Environment.IsDevelopment())
@@ -244,9 +258,21 @@ app.UseResponseCompression();
 app.UseRouting();
 app.UseCors("AllowFrontend");
 
+// ===================== SECURITY HEADERS =====================
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["X-Frame-Options"] = "DENY";
+    context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
+    context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    context.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
+    await next();
+});
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHealthChecks("/health");
 
 app.Run();

@@ -4,22 +4,24 @@ using ClientEcommerce.API.Data;
 using ClientEcommerce.API.Models;
 using ClientEcommerce.API.Services;
 
-
 public class AuthService : IAuthService
 {
     private readonly AppDbContext _context;
     private readonly PasswordHasher<User> _passwordHasher;
     private readonly IEmailService _emailService;
     private readonly IConfiguration _config;
+    private readonly ILogger<AuthService> _logger;
 
     public AuthService(
         AppDbContext context,
         IEmailService emailService,
-        IConfiguration config)
+        IConfiguration config,
+        ILogger<AuthService> logger)
     {
         _context = context;
         _emailService = emailService;
         _config = config;
+        _logger = logger;
         _passwordHasher = new PasswordHasher<User>();
     }
 
@@ -30,11 +32,11 @@ public class AuthService : IAuthService
         string newPassword)
     {
         if (!int.TryParse(userId, out var id))
-            throw new Exception("Invalid user id");
+            throw new BadRequestException("Invalid user id");
 
         var user = await _context.Users.FindAsync(id);
         if (user == null)
-            throw new Exception("User not found");
+            throw new NotFoundException("User not found");
 
         var verify = _passwordHasher.VerifyHashedPassword(
             user,
@@ -43,7 +45,7 @@ public class AuthService : IAuthService
         );
 
         if (verify == PasswordVerificationResult.Failed)
-            throw new Exception("Current password is incorrect");
+            throw new BadRequestException("Current password is incorrect");
 
         user.PasswordHash = _passwordHasher.HashPassword(user, newPassword);
         await _context.SaveChangesAsync();
@@ -54,14 +56,14 @@ public class AuthService : IAuthService
     {
         email = email.Trim().ToLower(); // 🔑 normalize input
 
-        Console.WriteLine($"ForgotPasswordAsync called with: {email}");
+        _logger.LogInformation("ForgotPasswordAsync called for: {Email}", email);
 
         var user = await _context.Users
             .FirstOrDefaultAsync(u => u.Email.ToLower() == email);
 
         if (user == null)
         {
-            Console.WriteLine("User NOT found for forgot password");
+            _logger.LogWarning("User not found for forgot password: {Email}", email);
             return;
         }
 
@@ -80,7 +82,7 @@ public class AuthService : IAuthService
         var resetLink =
             $"{_config["FrontendUrl"]}/reset-password?token={token}";
 
-        Console.WriteLine($"Sending reset email to {user.Email}");
+        _logger.LogInformation("Sending reset email to {Email}", user.Email);
 
         await _emailService.SendAsync(
             user.Email,
@@ -88,7 +90,7 @@ public class AuthService : IAuthService
             $"Click here to reset your password: {resetLink}"
         );
 
-        Console.WriteLine("Reset email SENT");
+        _logger.LogInformation("Reset email sent to {Email}", user.Email);
     }
 
 
@@ -103,7 +105,7 @@ public class AuthService : IAuthService
                 x.Expiry > DateTime.UtcNow);
 
         if (reset == null)
-            throw new Exception("Invalid or expired token");
+            throw new BadRequestException("Invalid or expired token");
 
         reset.User.PasswordHash =
             _passwordHasher.HashPassword(reset.User, newPassword);

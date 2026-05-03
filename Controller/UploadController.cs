@@ -1,7 +1,9 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
 [Route("api/upload")]
+[Authorize(Roles = "Admin")]
 public class UploadController : ControllerBase
 {
     private readonly ICloudinaryService _cloudinary;

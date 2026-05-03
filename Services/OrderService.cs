@@ -14,11 +14,13 @@ namespace ClientEcommerce.API.Services
     {
         private readonly AppDbContext _context;
         private readonly IWhatsappService _whatsappService;
+        private readonly ILogger<OrderService> _logger;
 
-        public OrderService(AppDbContext context, IWhatsappService whatsappService)
+        public OrderService(AppDbContext context, IWhatsappService whatsappService, ILogger<OrderService> logger)
         {
             _context = context;
             _whatsappService = whatsappService;
+            _logger = logger;
         }
 
         // ================= CUSTOMER =================
@@ -46,7 +48,7 @@ namespace ClientEcommerce.API.Services
                 foreach (var item in dto.Items)
                 {
                     if (!variants.TryGetValue(item.ProductVariantId, out var variant))
-                        throw new Exception("Invalid product variant");
+                        throw new BadRequestException("Invalid product variant");
 
                     order.OrderItems.Add(new OrderItem
                     {
@@ -118,7 +120,7 @@ namespace ClientEcommerce.API.Services
                     }
                     else
                     {
-                        System.Console.WriteLine($"[WhatsApp customer skipped] UserId={userId} has no phone number.");
+                        _logger.LogInformation("WhatsApp customer skipped: UserId={UserId} has no phone number", userId);
                     }
 
                     var debugTo = Environment.GetEnvironmentVariable("WHATSAPP_DEBUG_TO");
@@ -129,7 +131,7 @@ namespace ClientEcommerce.API.Services
                 }
                 catch (Exception ex)
                 {
-                    System.Console.WriteLine($"[WhatsApp error] Failed to notify admin for OrderId={order.Id}. {ex}");
+                    _logger.LogError(ex, "WhatsApp notification failed for OrderId={OrderId}", order.Id);
                 }
             }
             catch
@@ -158,7 +160,7 @@ namespace ClientEcommerce.API.Services
         {
             var order = _context.Orders
                 .FirstOrDefault(o => o.Id == orderId && o.UserId == userId)
-                ?? throw new Exception("Order not found");
+                ?? throw new NotFoundException("Order not found");
 
             return new UserOrderDetailDto
             {
@@ -206,10 +208,10 @@ namespace ClientEcommerce.API.Services
         public void ConfirmOrder(int orderId)
         {
             var order = _context.Orders.Find(orderId)
-                ?? throw new Exception("Order not found");
+                ?? throw new NotFoundException("Order not found");
 
             if (order.Status != OrderStatus.Placed.ToString())
-                throw new Exception("Only placed orders can be confirmed");
+                throw new BadRequestException("Only placed orders can be confirmed");
 
             order.Status = OrderStatus.Confirmed.ToString();
             _context.SaveChanges();
@@ -218,19 +220,20 @@ namespace ClientEcommerce.API.Services
         public void CancelOrder(int orderId, string reason)
         {
             var order = _context.Orders.Find(orderId)
-                ?? throw new Exception("Order not found");
+                ?? throw new NotFoundException("Order not found");
 
             order.Status = OrderStatus.Cancelled.ToString();
+            order.CancelReason = reason;
             _context.SaveChanges();
         }
 
         public void DispatchOrder(int orderId)
         {
             var order = _context.Orders.Find(orderId)
-                ?? throw new Exception("Order not found");
+                ?? throw new NotFoundException("Order not found");
 
             if (order.Status != OrderStatus.Confirmed.ToString())
-                throw new Exception("Order must be confirmed before dispatch");
+                throw new BadRequestException("Order must be confirmed before dispatch");
 
             order.Status = OrderStatus.Dispatched.ToString();
             order.DispatchedAt = DateTime.UtcNow;
@@ -240,10 +243,10 @@ namespace ClientEcommerce.API.Services
         public void DeliverOrder(int orderId)
         {
             var order = _context.Orders.Find(orderId)
-                ?? throw new Exception("Order not found");
+                ?? throw new NotFoundException("Order not found");
 
             if (order.Status != OrderStatus.Dispatched.ToString())
-                throw new Exception("Order must be dispatched before delivery");
+                throw new BadRequestException("Order must be dispatched before delivery");
 
             order.Status = OrderStatus.Delivered.ToString();
             order.DeliveredAt = DateTime.UtcNow;

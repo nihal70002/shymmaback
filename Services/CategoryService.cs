@@ -40,7 +40,7 @@ namespace ClientEcommerce.API.Services
         public void Create(CreateCategoryDto dto, string? imageUrl)
         {
             if (_context.Categories.Any(c => c.Name == dto.Name))
-                throw new Exception("Category already exists");
+                throw new BadRequestException("Category already exists");
 
             _context.Categories.Add(new Category
             {
@@ -60,15 +60,15 @@ namespace ClientEcommerce.API.Services
         {
             var category = _context.Categories.Find(id);
             if (category == null)
-                throw new Exception("Category not found");
+                throw new NotFoundException("Category not found");
 
             // 1️⃣ Block if has subcategories
             if (_context.Categories.Any(c => c.ParentCategoryId == id))
-                throw new Exception("Cannot delete category with subcategories");
+                throw new BadRequestException("Cannot delete category with subcategories");
 
             // 2️⃣ Block if assigned to products
             if (_context.Products.Any(p => p.CategoryId == id))
-                throw new Exception("Cannot delete category assigned to products");
+                throw new BadRequestException("Cannot delete category assigned to products");
 
             _context.Categories.Remove(category);
             _context.SaveChanges();
@@ -121,29 +121,29 @@ namespace ClientEcommerce.API.Services
                 .FirstOrDefault(c => c.Id == id);
 
             if (category == null)
-                throw new Exception("Category not found");
+                throw new NotFoundException("Category not found");
 
             // Validate parent
             if (dto.ParentCategoryId.HasValue)
             {
                 if (dto.ParentCategoryId == id)
-                    throw new Exception("Category cannot be its own parent");
+                    throw new BadRequestException("Category cannot be its own parent");
 
                 var parent = _context.Categories
                     .FirstOrDefault(c => c.Id == dto.ParentCategoryId.Value);
 
                 if (parent == null)
-                    throw new Exception("Parent category not found");
+                    throw new NotFoundException("Parent category not found");
 
                 if (parent.ParentCategoryId != null)
-                    throw new Exception("Only 2-level hierarchy allowed");
+                    throw new BadRequestException("Only 2-level hierarchy allowed");
             }
 
             var hasChildren = _context.Categories
                 .Any(c => c.ParentCategoryId == id);
 
             if (hasChildren && dto.ParentCategoryId != null)
-                throw new Exception("Cannot move main category that has subcategories");
+                throw new BadRequestException("Cannot move main category that has subcategories");
 
             category.Name = dto.Name;
             category.ParentCategoryId = dto.ParentCategoryId;

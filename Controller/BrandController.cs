@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using ClientEcommerce.API.DTOs;
 using ClientEcommerce.API.Services;
 
@@ -21,6 +22,7 @@ namespace ClientEcommerce.API.Controllers
             return Ok(_service.GetBrands());
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public IActionResult AddBrand([FromBody] CreateBrandDto dto)
         {

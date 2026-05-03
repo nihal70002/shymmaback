@@ -145,6 +145,20 @@ namespace ClientEcommerce.API.Data
 
             modelBuilder.Entity<ProductVariant>()
                 .HasIndex(v => v.ProductId);
+
+            // ================= ADDITIONAL PERFORMANCE INDEXES =================
+
+            modelBuilder.Entity<Address>()
+                .HasIndex(a => a.UserId);
+
+            modelBuilder.Entity<PasswordResetToken>()
+                .HasIndex(p => p.Token);
+
+            modelBuilder.Entity<PasswordResetToken>()
+                .HasIndex(p => p.UserId);
+
+            modelBuilder.Entity<ProductComponent>()
+                .HasIndex(pc => pc.ProductId);
         }
 
     }

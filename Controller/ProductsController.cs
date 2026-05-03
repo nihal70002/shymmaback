@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using ClientEcommerce.API.DTOs;
 using ClientEcommerce.API.Services;
 
@@ -15,6 +16,7 @@ namespace ClientEcommerce.API.Controllers
             _productService = productService;
         }
         [HttpPost("bulk")]
+        [Authorize(Roles = "Admin")]
         public IActionResult BulkCreateProducts(
     [FromBody] List<AdminBulkCreateProductDto> products)
         {

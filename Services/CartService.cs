@@ -2,23 +2,23 @@
 using ClientEcommerce.API.Data;
 using ClientEcommerce.API.DTOs;
 using ClientEcommerce.API.Models;
+
 namespace ClientEcommerce.API.Services
 {
     public class CartService : ICartService
     {
         private readonly AppDbContext _context;
-        public CartService(AppDbContext context)
+        private readonly ILogger<CartService> _logger;
+
+        public CartService(AppDbContext context, ILogger<CartService> logger)
         {
             _context = context;
+            _logger = logger;
         }
+
         // ================= ADD TO CART =================
         public void AddToCart(int userId, AddToCartDto dto)
         {
-            Console.WriteLine("===== ADD TO CART DEBUG START =====");
-            Console.WriteLine($"UserId: {userId}");
-            Console.WriteLine($"DTO ProductVariantId: {dto.ProductVariantId}");
-            Console.WriteLine($"DTO Quantity: {dto.Quantity}");
-
             // 1️⃣ Get or create cart
             var cart = _context.Carts.FirstOrDefault(c => c.UserId == userId);
             if (cart == null)
@@ -26,38 +26,20 @@ namespace ClientEcommerce.API.Services
                 cart = new Cart { UserId = userId };
                 _context.Carts.Add(cart);
                 _context.SaveChanges();
-                Console.WriteLine($"New cart created. CartId: {cart.Id}");
-            }
-            else
-            {
-                Console.WriteLine($"Existing cart found. CartId: {cart.Id}");
+                _logger.LogInformation("New cart created for user {UserId}", userId);
             }
 
-            // 2️⃣ Check ALL ProductVariants in DB
-            var allVariants = _context.ProductVariants.ToList();
-            Console.WriteLine($"Total variants in DB: {allVariants.Count}");
-
-            foreach (var v in allVariants)
-            {
-                Console.WriteLine(
-                    $"VariantId: {v.Id}, ProductId: {v.ProductId}, Size: {v.Size}"
-                );
-            }
-
-            // 3️⃣ Try to find variant
+            // 2️⃣ Find the variant directly (no need to load all)
             var variant = _context.ProductVariants
                 .FirstOrDefault(v => v.Id == dto.ProductVariantId);
 
             if (variant == null)
             {
-                Console.WriteLine("❌ VARIANT NOT FOUND — STOPPING HERE");
-                Console.WriteLine("===== ADD TO CART DEBUG END =====");
-                return; // ⛔ TEMP: do NOT throw
+                _logger.LogWarning("Variant {VariantId} not found for add-to-cart", dto.ProductVariantId);
+                throw new NotFoundException("Product variant not found");
             }
 
-            Console.WriteLine($"✅ Variant found: VariantId {variant.Id}");
-
-            // 4️⃣ Check existing cart item
+            // 3️⃣ Check existing cart item
             var existingItem = _context.CartItems.FirstOrDefault(i =>
                 i.CartId == cart.Id &&
                 i.ProductVariantId == variant.Id
@@ -66,7 +48,7 @@ namespace ClientEcommerce.API.Services
             if (existingItem != null)
             {
                 existingItem.Quantity += dto.Quantity;
-                Console.WriteLine("Updated existing cart item");
+                _logger.LogInformation("Updated cart item quantity for user {UserId}", userId);
             }
             else
             {
@@ -78,11 +60,10 @@ namespace ClientEcommerce.API.Services
                     Price = variant.Price
                 };
                 _context.CartItems.Add(cartItem);
-                Console.WriteLine("New cart item added");
+                _logger.LogInformation("New cart item added for user {UserId}", userId);
             }
 
             _context.SaveChanges();
-            Console.WriteLine("===== ADD TO CART DEBUG END =====");
         }
 
         // ================= GET CART =================

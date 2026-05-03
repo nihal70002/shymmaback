@@ -28,7 +28,7 @@ namespace ClientEcommerce.API.Services
         public void CreateUser(CreateUserDto dto)
         {
             if (_context.Users.Any(u => u.Email == dto.Email))
-                throw new Exception("Email already exists");
+                throw new BadRequestException("Email already exists");
 
             var user = new User
             {
@@ -116,7 +116,7 @@ namespace ClientEcommerce.API.Services
         public void ToggleUserStatus(int userId)
         {
             var user = _context.Users.Find(userId)
-                ?? throw new Exception("User not found");
+                ?? throw new NotFoundException("User not found");
 
             user.IsActive = !user.IsActive;
             _context.SaveChanges();
@@ -129,7 +129,7 @@ namespace ClientEcommerce.API.Services
         public UserProfileDto GetProfile(int userId)
         {
             var user = _context.Users.Find(userId)
-                ?? throw new Exception("User not found");
+                ?? throw new NotFoundException("User not found");
 
             return new UserProfileDto
             {
@@ -142,7 +142,7 @@ namespace ClientEcommerce.API.Services
         public void UpdateProfile(int userId, UpdateUserProfileDto dto)
         {
             var user = _context.Users.Find(userId)
-                ?? throw new Exception("User not found");
+                ?? throw new NotFoundException("User not found");
 
             user.Name = dto.Name;
             user.PhoneNumber = dto.PhoneNumber;
@@ -153,7 +153,16 @@ namespace ClientEcommerce.API.Services
         public void ChangePassword(int userId, ChangePasswordDto dto)
         {
             var user = _context.Users.Find(userId)
-                ?? throw new Exception("User not found");
+                ?? throw new NotFoundException("User not found");
+
+            var verify = _passwordHasher.VerifyHashedPassword(
+                user,
+                user.PasswordHash,
+                dto.CurrentPassword
+            );
+
+            if (verify == PasswordVerificationResult.Failed)
+                throw new BadRequestException("Current password is incorrect");
 
             user.PasswordHash =
                 _passwordHasher.HashPassword(user, dto.NewPassword);

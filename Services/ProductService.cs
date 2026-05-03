@@ -12,13 +12,15 @@ namespace ClientEcommerce.API.Services
     {
         private readonly AppDbContext _context;
         private readonly IDistributedCache _cache;
+        private readonly ILogger<ProductService> _logger;
 
         private const string ProductCacheVersionKey = "products_cache_version";
 
-        public ProductService(AppDbContext context, IDistributedCache cache)
+        public ProductService(AppDbContext context, IDistributedCache cache, ILogger<ProductService> logger)
         {
             _context = context;
             _cache = cache;
+            _logger = logger;
         }
 
         public IEnumerable<ProductListDto> GetAllProducts()
@@ -115,11 +117,11 @@ namespace ClientEcommerce.API.Services
             var cachedData = _cache.GetString(cacheKey);
             if (cachedData != null)
             {
-                Console.WriteLine("PRODUCTS → REDIS CACHE HIT");
+                _logger.LogDebug("PRODUCTS → REDIS CACHE HIT for {CacheKey}", cacheKey);
                 return JsonSerializer.Deserialize<PagedResponseDto<ProductListDto>>(cachedData)!;
             }
 
-            Console.WriteLine("PRODUCTS → DB HIT");
+            _logger.LogDebug("PRODUCTS → DB HIT for {CacheKey}", cacheKey);
 
             var query = _context.Products
                 .Where(p => p.IsActive);
@@ -170,20 +172,20 @@ namespace ClientEcommerce.API.Services
             // 🔹 SEARCH FILTER (English + Arabic)
             if (!string.IsNullOrWhiteSpace(search))
             {
-                var searchTerm = search.Trim().ToLower();
+                var searchTerm = search.Trim();
                 query = query.Where(p =>
-                    p.Name.ToLower().Contains(searchTerm) ||
-                    (p.NameArabic != null && p.NameArabic.ToLower().Contains(searchTerm)) ||
-                    (p.Description != null && p.Description.ToLower().Contains(searchTerm)) ||
-                    p.Brand.BrandName.ToLower().Contains(searchTerm) ||
-                    p.Category.Name.ToLower().Contains(searchTerm) ||
+                    EF.Functions.ILike(p.Name, $"%{searchTerm}%") ||
+                    (p.NameArabic != null && EF.Functions.ILike(p.NameArabic, $"%{searchTerm}%")) ||
+                    (p.Description != null && EF.Functions.ILike(p.Description, $"%{searchTerm}%")) ||
+                    EF.Functions.ILike(p.Brand.BrandName, $"%{searchTerm}%") ||
+                    EF.Functions.ILike(p.Category.Name, $"%{searchTerm}%") ||
                     p.Variants.Any(v =>
-                        (v.ProductCode != null && v.ProductCode.ToLower().Contains(searchTerm)) ||
-                        (v.Size != null && v.Size.ToLower().Contains(searchTerm)) ||
-                        (v.Class != null && v.Class.ToLower().Contains(searchTerm)) ||
-                        (v.Style != null && v.Style.ToLower().Contains(searchTerm)) ||
-                        (v.Material != null && v.Material.ToLower().Contains(searchTerm)) ||
-                        (v.Color != null && v.Color.ToLower().Contains(searchTerm)))
+                        (v.ProductCode != null && EF.Functions.ILike(v.ProductCode, $"%{searchTerm}%")) ||
+                        (v.Size != null && EF.Functions.ILike(v.Size, $"%{searchTerm}%")) ||
+                        (v.Class != null && EF.Functions.ILike(v.Class, $"%{searchTerm}%")) ||
+                        (v.Style != null && EF.Functions.ILike(v.Style, $"%{searchTerm}%")) ||
+                        (v.Material != null && EF.Functions.ILike(v.Material, $"%{searchTerm}%")) ||
+                        (v.Color != null && EF.Functions.ILike(v.Color, $"%{searchTerm}%")))
                 );
             }
 
@@ -582,7 +584,8 @@ namespace ClientEcommerce.API.Services
         public void ToggleProduct(int productId)
         {
             var product = _context.Products.FirstOrDefault(p => p.Id == productId);
-            if (product == null) throw new Exception("Product not found");
+            if (product == null)
+                throw new NotFoundException("Product not found");
 
             product.IsActive = !product.IsActive;
             _context.SaveChanges();
@@ -600,7 +603,7 @@ namespace ClientEcommerce.API.Services
                 .FirstOrDefaultAsync(p => p.Id == productId);
 
             if (product == null)
-                throw new Exception("Product not found");
+                throw new NotFoundException("Product not found");
 
             // 🔥 HARD DELETE
             _context.ProductVariants.RemoveRange(product.Variants);
@@ -949,7 +952,7 @@ namespace ClientEcommerce.API.Services
         public void UpdateVariantStock(int variantId, int stock)
         {
             var variant = _context.ProductVariants.FirstOrDefault(v => v.Id == variantId);
-            if (variant == null) throw new Exception("Variant not found");
+            if (variant == null) throw new NotFoundException("Variant not found");
 
             variant.Stock = stock;
             _context.SaveChanges();

@@ -10,10 +10,12 @@ namespace ClientEcommerce.API.Controllers
     public class WhatsappController : ControllerBase
     {
         private readonly IWhatsappService _whatsappService;
+        private readonly ILogger<WhatsappController> _logger;
 
-        public WhatsappController(IWhatsappService whatsappService)
+        public WhatsappController(IWhatsappService whatsappService, ILogger<WhatsappController> logger)
         {
             _whatsappService = whatsappService;
+            _logger = logger;
         }
 
         [HttpPost("webhook")]
@@ -22,7 +24,7 @@ namespace ClientEcommerce.API.Controllers
             [FromForm] string Body,
             [FromForm] string From)
         {
-            Console.WriteLine("WHATSAPP WEBHOOK HIT");
+            _logger.LogInformation("WhatsApp webhook hit");
 
             try
             {
@@ -37,7 +39,7 @@ namespace ClientEcommerce.API.Controllers
                 // allow only Indian numbers
                 if (!sender.StartsWith("+91"))
                 {
-                    Console.WriteLine("Blocked non-Indian number");
+                    _logger.LogWarning("Blocked non-Indian number: {Sender}", sender);
                     return Content("<Response></Response>", "text/xml");
                 }
 
@@ -47,7 +49,7 @@ namespace ClientEcommerce.API.Controllers
 
                 if (!isAllowed)
                 {
-                    Console.WriteLine("Unauthorized sender");
+                    _logger.LogWarning("Unauthorized WhatsApp sender: {Sender}", sender);
                     return Content("<Response></Response>", "text/xml");
                 }
 
@@ -63,11 +65,11 @@ namespace ClientEcommerce.API.Controllers
                     );
                 }
 
-                Console.WriteLine("Alert forwarded to admins");
+                _logger.LogInformation("WhatsApp alert forwarded to {AdminCount} admins", admins.Count);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Webhook error: {ex.Message}");
+                _logger.LogError(ex, "WhatsApp webhook error");
             }
 
             return Content("<Response></Response>", "text/xml");

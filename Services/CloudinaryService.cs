@@ -15,7 +15,7 @@ public class CloudinaryService : ICloudinaryService
             string.IsNullOrWhiteSpace(apiKey) ||
             string.IsNullOrWhiteSpace(apiSecret))
         {
-            throw new Exception("Cloudinary configuration missing or invalid");
+            throw new BadRequestException("Cloudinary configuration missing or invalid");
         }
 
         var account = new Account(cloudName, apiKey, apiSecret);
@@ -26,7 +26,7 @@ public class CloudinaryService : ICloudinaryService
     public async Task<string> UploadImageAsync(IFormFile file)
     {
         if (file == null || file.Length == 0)
-            throw new Exception("File is empty");
+            throw new BadRequestException("File is empty");
 
         using var stream = file.OpenReadStream();
 
@@ -44,12 +44,12 @@ public class CloudinaryService : ICloudinaryService
         // 🔴 VERY IMPORTANT CHECK
         if (result.Error != null)
         {
-            throw new Exception($"Cloudinary error: {result.Error.Message}");
+            throw new BadRequestException($"Cloudinary error: {result.Error.Message}");
         }
 
         if (result.SecureUrl == null)
         {
-            throw new Exception("Cloudinary upload failed: SecureUrl is null");
+            throw new BadRequestException("Cloudinary upload failed: SecureUrl is null");
         }
 
         return result.SecureUrl.ToString();
@@ -58,7 +58,7 @@ public class CloudinaryService : ICloudinaryService
     public async Task<string> UploadVideoAsync(IFormFile file)
     {
         if (file == null || file.Length == 0)
-            throw new Exception("File is empty");
+            throw new BadRequestException("File is empty");
 
         using var stream = file.OpenReadStream();
 
@@ -75,12 +75,12 @@ public class CloudinaryService : ICloudinaryService
 
         if (result.Error != null)
         {
-            throw new Exception($"Cloudinary error: {result.Error.Message}");
+            throw new BadRequestException($"Cloudinary error: {result.Error.Message}");
         }
 
         if (result.SecureUrl == null)
         {
-            throw new Exception("Cloudinary upload failed: SecureUrl is null");
+            throw new BadRequestException("Cloudinary upload failed: SecureUrl is null");
         }
 
         return result.SecureUrl.ToString();

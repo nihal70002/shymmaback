@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace ClientEcommerce.API.Controllers
 {
     [ApiController]
     [Route("api/admin/reports")]
+    [Authorize(Roles = "Admin")]
     public class AdminReportsController : ControllerBase
     {
         private readonly IAdminReportService _service;

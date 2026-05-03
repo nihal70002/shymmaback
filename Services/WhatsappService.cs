@@ -10,10 +10,12 @@ namespace ClientEcommerce.API.Services
     public class WhatsappService : IWhatsappService
     {
         private readonly AppDbContext _context;
+        private readonly ILogger<WhatsappService> _logger;
 
-        public WhatsappService(AppDbContext context)
+        public WhatsappService(AppDbContext context, ILogger<WhatsappService> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         public async Task<bool> IsAllowedWhatsappUser(string phoneNumber)
@@ -40,7 +42,7 @@ namespace ClientEcommerce.API.Services
                 string.IsNullOrWhiteSpace(authToken) ||
                 string.IsNullOrWhiteSpace(from))
             {
-                Console.WriteLine("[WhatsApp ERROR] Missing Twilio environment variables.");
+                _logger.LogError("Missing Twilio environment variables");
                 return;
             }
 
@@ -54,7 +56,7 @@ namespace ClientEcommerce.API.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[WhatsApp ERROR] Invalid number format. To={to}, Error={ex.Message}");
+                _logger.LogError(ex, "Invalid WhatsApp number format. To={To}", to);
                 return;
             }
 
@@ -68,11 +70,11 @@ namespace ClientEcommerce.API.Services
                     body: message
                 );
 
-                Console.WriteLine($"[WhatsApp SUCCESS] Sent to {toNormalized}, SID={result.Sid}");
+                _logger.LogInformation("WhatsApp message sent to {To}, SID={Sid}", toNormalized, result.Sid);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[WhatsApp ERROR] Failed sending message. {ex.Message}");
+                _logger.LogError(ex, "WhatsApp message failed to send");
             }
         }
 
