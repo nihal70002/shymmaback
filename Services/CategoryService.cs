@@ -1,4 +1,4 @@
-﻿using ClientEcommerce.API.Data;
+using ClientEcommerce.API.Data;
 using ClientEcommerce.API.DTOs;
 using ClientEcommerce.API.Models;
 using Microsoft.EntityFrameworkCore;
@@ -84,36 +84,32 @@ namespace ClientEcommerce.API.Services
 
         public CategoryDto? GetCategoryWithChildren(string slug)
         {
-            var category = _context.Categories
-                .AsNoTracking() // ⭐ prevents EF tracking issues
-                .Include(c => c.SubCategories)
-                .FirstOrDefault(c => c.Slug == slug && c.IsActive);
+            var categoryDto = _context.Categories
+                .Where(c => c.Slug == slug && c.IsActive)
+                .Select(c => new CategoryDto
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    Slug = c.Slug,
+                    IsActive = c.IsActive,
+                    ParentCategoryId = c.ParentCategoryId,
+                    ImageUrl = c.ImageUrl,
+                    SubCategories = c.SubCategories
+                        .Where(sc => sc.IsActive)
+                        .Select(sc => new CategoryDto
+                        {
+                            Id = sc.Id,
+                            Name = sc.Name,
+                            Slug = sc.Slug,
+                            IsActive = sc.IsActive,
+                            ParentCategoryId = sc.ParentCategoryId,
+                            ImageUrl = sc.ImageUrl
+                        })
+                        .ToList()
+                })
+                .FirstOrDefault();
 
-            if (category == null)
-                return null;
-
-            return new CategoryDto
-            {
-                Id = category.Id,
-                Name = category.Name,
-                Slug = category.Slug,
-                IsActive = category.IsActive,
-                ParentCategoryId = category.ParentCategoryId,
-                ImageUrl = category.ImageUrl,
-
-                SubCategories = category.SubCategories
-                    ?.Where(sc => sc.IsActive)
-                    .Select(sc => new CategoryDto
-                    {
-                        Id = sc.Id,
-                        Name = sc.Name,
-                        Slug = sc.Slug,
-                        IsActive = sc.IsActive,
-                        ParentCategoryId = sc.ParentCategoryId,
-                        ImageUrl = sc.ImageUrl
-                    })
-                    .ToList() ?? new List<CategoryDto>()
-            };
+            return categoryDto;
         }
         public void Update(int id, UpdateCategoryDto dto, string? newImageUrl)
         {
