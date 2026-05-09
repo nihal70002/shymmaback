@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ClientEcommerce.API.Data;
 using ClientEcommerce.API.DTOs;
 using ClientEcommerce.API.DTOs.Admin;
@@ -74,6 +74,7 @@ namespace ClientEcommerce.API.Services
                         .Include(o => o.OrderItems)
                             .ThenInclude(oi => oi.ProductVariant)
                                 .ThenInclude(pv => pv.Product)
+                        .AsSplitQuery()
                         .FirstOrDefaultAsync(o => o.Id == order.Id);
 
                     var userPhone = detailedOrder?.User?.PhoneNumber;
@@ -144,6 +145,7 @@ namespace ClientEcommerce.API.Services
         public IEnumerable<UserOrderListDto> GetOrdersForUser(int userId)
         {
             return _context.Orders
+                .AsNoTracking()
                 .Where(o => o.UserId == userId)
                 .OrderByDescending(o => o.OrderDate)
                 .Select(o => new UserOrderListDto
@@ -176,10 +178,6 @@ namespace ClientEcommerce.API.Services
             return await _context.Orders
                 .AsNoTracking()
                 .Where(o => o.Id == orderId && o.UserId == userId)
-                .Include(o => o.OrderItems)
-                    .ThenInclude(oi => oi.ProductVariant)
-                        .ThenInclude(pv => pv.Product)
-                            .ThenInclude(p => p.Images)
                 .Select(o => new OrderDetailsDto
                 {
                     OrderId = o.Id,
@@ -282,7 +280,7 @@ namespace ClientEcommerce.API.Services
         public async Task<PagedResultDto<AdminOrderListDto>> GetAdminOrders(int page, int pageSize, string? status)
         {
             var query = _context.Orders
-                .Include(o => o.User)
+                .AsNoTracking()
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(status))
@@ -324,7 +322,7 @@ namespace ClientEcommerce.API.Services
         public IEnumerable<AdminOrderListDto> GetRecentOrders(int count)
         {
             return _context.Orders
-                .Include(o => o.User)
+                .AsNoTracking()
                 .OrderByDescending(o => o.OrderDate)
                 .Take(count)
                 .Select(o => new AdminOrderListDto

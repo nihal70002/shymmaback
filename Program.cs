@@ -1,4 +1,4 @@
-﻿using ClientEcommerce.API.Configurations;
+using ClientEcommerce.API.Configurations;
 using ClientEcommerce.API.Data;
 using ClientEcommerce.API.Middleware;
 using ClientEcommerce.API.Models;
@@ -9,10 +9,11 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.OpenApi.Models;
 using Npgsql;
 using System.Text;
-
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -162,6 +163,19 @@ builder.WebHost.ConfigureKestrel(options =>
 builder.Services.AddHealthChecks()
     .AddNpgSql(connectionString);
 
+// ===================== RATE LIMITING =====================
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("LoginPolicy", opt =>
+    {
+        opt.PermitLimit = 5;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 0;
+    });
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
+
 // ===================== BUILD =====================
 
 var app = builder.Build();
@@ -256,6 +270,7 @@ else
 // app.UseHttpsRedirection();
 app.UseResponseCompression();
 app.UseRouting();
+app.UseRateLimiter(); // ✅ ADDED RATE LIMITER MIDDLEWARE
 app.UseCors("AllowFrontend");
 
 // ===================== SECURITY HEADERS =====================

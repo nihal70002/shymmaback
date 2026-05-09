@@ -26,13 +26,13 @@ namespace ClientEcommerce.API.Services
         public IEnumerable<ProductListDto> GetAllProducts()
         {
             return _context.Products
+                .AsNoTracking()
                 .Include(p => p.Category)
-.Include(p => p.Brand)     // ✅ ADD
-.Include(p => p.Variants)
-.Include(p => p.Images)
-.Include(p => p.Components)
-
-
+                .Include(p => p.Brand)
+                .Include(p => p.Variants)
+                .Include(p => p.Images)
+                .Include(p => p.Components)
+                .AsSplitQuery()
                 .OrderByDescending(p => p.Id)
                 .Select(p => new ProductListDto
                 {
@@ -124,9 +124,10 @@ namespace ClientEcommerce.API.Services
             _logger.LogDebug("PRODUCTS → DB HIT for {CacheKey}", cacheKey);
 
             var query = _context.Products
+                .AsNoTracking()
+                .AsSplitQuery()
                 .Where(p => p.IsActive);
 
-            // 🔹 CATEGORY FILTER (2-level hierarchy support)
             // 🔹 CATEGORY FILTER (correct hierarchy filtering)
             if (categoryIds != null && categoryIds.Any())
             {
@@ -254,12 +255,14 @@ namespace ClientEcommerce.API.Services
         public ProductDetailDto GetProductById(int productId)
         {
             var product = _context.Products
-    .Include(p => p.Category)
-    .Include(p => p.Variants)
-    .Include(p => p.Images)
-    .Include(p => p.Videos)
-    .Include(p => p.Components)   // ✅ ADD THIS LINE
-    .FirstOrDefault(p => p.Id == productId && p.IsActive);
+                .AsNoTracking()
+                .Include(p => p.Category)
+                .Include(p => p.Variants)
+                .Include(p => p.Images)
+                .Include(p => p.Videos)
+                .Include(p => p.Components)
+                .AsSplitQuery()
+                .FirstOrDefault(p => p.Id == productId && p.IsActive);
             if (product == null) return null;
 
 
@@ -600,6 +603,7 @@ namespace ClientEcommerce.API.Services
         {
             var product = await _context.Products
                 .Include(p => p.Variants)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(p => p.Id == productId);
 
             if (product == null)

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -9,7 +9,9 @@ using ClientEcommerce.API.Models;
 using ClientEcommerce.API.Services;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace ClientEcommerce.API.Controllers
 {
@@ -39,6 +41,7 @@ namespace ClientEcommerce.API.Controllers
 
         // 🔐 LOGIN
         [HttpPost("login")]
+        [EnableRateLimiting("LoginPolicy")] // ✅ Rate limiting added
         public IActionResult Login(LoginRequestDto request)
         {
             if (request == null ||
@@ -82,6 +85,13 @@ namespace ClientEcommerce.API.Controllers
             }
 
             var token = GenerateJwtToken(user);
+            var refreshToken = GenerateRefreshToken();
+
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+            _context.SaveChanges();
+
+            SetRefreshTokenCookie(refreshToken);
 
             return Ok(new
             {
@@ -93,6 +103,50 @@ namespace ClientEcommerce.API.Controllers
             });
         }
        
+        [HttpPost("refresh-token")]
+        public IActionResult RefreshToken()
+        {
+            var refreshToken = Request.Cookies["refreshToken"];
+
+            if (string.IsNullOrEmpty(refreshToken))
+                return Unauthorized("No refresh token provided.");
+
+            var user = _context.Users.FirstOrDefault(u => u.RefreshToken == refreshToken);
+
+            if (user == null || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+                return Unauthorized("Invalid or expired refresh token.");
+
+            var newJwtToken = GenerateJwtToken(user);
+            var newRefreshToken = GenerateRefreshToken();
+
+            user.RefreshToken = newRefreshToken;
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+            _context.SaveChanges();
+
+            SetRefreshTokenCookie(newRefreshToken);
+
+            return Ok(new { token = newJwtToken });
+        }
+
+        private void SetRefreshTokenCookie(string refreshToken)
+        {
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Expires = DateTime.UtcNow.AddDays(7),
+                Secure = true,
+                SameSite = SameSiteMode.Strict
+            };
+            Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
+        }
+
+        private static string GenerateRefreshToken()
+        {
+            var randomNumber = new byte[64];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomNumber);
+            return Convert.ToBase64String(randomNumber);
+        }
 
 
 
