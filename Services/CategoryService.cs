@@ -107,6 +107,7 @@ namespace ClientEcommerce.API.Services
                         })
                         .ToList()
                 })
+                .OrderBy(c => c.ParentCategoryId == null ? 0 : 1)
                 .FirstOrDefault();
 
             return categoryDto;
@@ -142,6 +143,7 @@ namespace ClientEcommerce.API.Services
                 throw new BadRequestException("Cannot move main category that has subcategories");
 
             category.Name = dto.Name;
+            category.Slug = dto.Name.ToLower().Replace(" ", "-");
             category.ParentCategoryId = dto.ParentCategoryId;
 
             // ❌ DO NOT TOUCH IsActive HERE
