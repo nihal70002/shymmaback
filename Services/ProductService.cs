@@ -880,11 +880,8 @@ namespace ClientEcommerce.API.Services
 
             foreach (var v in cleaned)
             {
-                if (string.IsNullOrWhiteSpace(v.Size))
-                    throw new ValidationException("Size is required");
-
-                if (string.IsNullOrWhiteSpace(v.Sku))
-                    throw new ValidationException("SKU cannot be empty");
+                if (string.IsNullOrWhiteSpace(v.Size) || string.IsNullOrWhiteSpace(v.Sku))
+                    throw new ValidationException("Either Size or SKU (Product Code) is required");
 
                 if (v.Stock < 0)
                     throw new ValidationException("Stock cannot be negative");
