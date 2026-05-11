@@ -60,6 +60,9 @@ public class CloudinaryService : ICloudinaryService
         if (file == null || file.Length == 0)
             throw new BadRequestException("File is empty");
 
+        // Add timeout for the upload operation
+        using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+        
         using var stream = file.OpenReadStream();
 
         var uploadParams = new VideoUploadParams
@@ -68,21 +71,30 @@ public class CloudinaryService : ICloudinaryService
             Folder = "products-videos",
             UseFilename = true,
             UniqueFilename = true,
-            Overwrite = false
+            Overwrite = false,
+            Timeout = TimeSpan.FromMinutes(5),
+            ChunkSize = 6000000 // 6MB chunks for better performance
         };
 
-        var result = await _cloudinary.UploadAsync(uploadParams);
-
-        if (result.Error != null)
+        try
         {
-            throw new BadRequestException($"Cloudinary error: {result.Error.Message}");
-        }
+            var result = await _cloudinary.UploadAsync(uploadParams, cts.Token);
 
-        if (result.SecureUrl == null)
+            if (result.Error != null)
+            {
+                throw new BadRequestException($"Cloudinary error: {result.Error.Message}");
+            }
+
+            if (result.SecureUrl == null)
+            {
+                throw new BadRequestException("Cloudinary upload failed: SecureUrl is null");
+            }
+
+            return result.SecureUrl.ToString();
+        }
+        catch (OperationCanceledException)
         {
-            throw new BadRequestException("Cloudinary upload failed: SecureUrl is null");
+            throw new BadRequestException("Video upload timed out. Please try again with a smaller file or check your internet connection.");
         }
-
-        return result.SecureUrl.ToString();
     }
 }
