@@ -112,6 +112,12 @@ namespace ClientEcommerce.API.Data
             modelBuilder.Entity<Order>()
                 .HasIndex(o => o.OrderDate);
 
+            modelBuilder.Entity<Order>()
+                .HasMany(o => o.OrderItems)
+                .WithOne(oi => oi.Order)
+                .HasForeignKey(oi => oi.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             modelBuilder.Entity<OrderItem>()
                 .HasIndex(oi => oi.OrderId);
 
