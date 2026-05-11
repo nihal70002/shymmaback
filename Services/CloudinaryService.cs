@@ -71,9 +71,7 @@ public class CloudinaryService : ICloudinaryService
             Folder = "products-videos",
             UseFilename = true,
             UniqueFilename = true,
-            Overwrite = false,
-            Timeout = TimeSpan.FromMinutes(5),
-            ChunkSize = 6000000 // 6MB chunks for better performance
+            Overwrite = false
         };
 
         try

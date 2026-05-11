@@ -40,6 +40,9 @@ namespace ClientEcommerce.API.Services
                     UserId = userId,
                     Status = OrderStatus.Placed.ToString(),
                     OrderDate = DateTime.UtcNow,
+                    PreferredDeliveryDate = dto.PreferredDeliveryDate,
+                    PreferredDeliveryTime = dto.PreferredDeliveryTime,
+                    DeliveryInstructions = dto.DeliveryInstructions,
                     OrderItems = new List<OrderItem>()
                 };
 
@@ -169,7 +172,10 @@ namespace ClientEcommerce.API.Services
                 OrderId = order.Id,
                 OrderDate = order.OrderDate,
                 Status = order.Status,
-                TotalAmount = order.TotalAmount
+                TotalAmount = order.TotalAmount,
+                PreferredDeliveryDate = order.PreferredDeliveryDate,
+                PreferredDeliveryTime = order.PreferredDeliveryTime,
+                DeliveryInstructions = order.DeliveryInstructions
             };
         }
 
@@ -185,6 +191,9 @@ namespace ClientEcommerce.API.Services
                     DeliveredDate = o.DeliveredAt,
                     Status = o.Status,
                     TotalAmount = o.TotalAmount,
+                    PreferredDeliveryDate = o.PreferredDeliveryDate,
+                    PreferredDeliveryTime = o.PreferredDeliveryTime,
+                    DeliveryInstructions = o.DeliveryInstructions,
                     Items = o.OrderItems.Select(i => new OrderItemDto
                     {
                         ProductId = i.ProductVariant.Product.Id,

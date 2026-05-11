@@ -7,6 +7,11 @@ namespace ClientEcommerce.API.DTOs
         [Required]
         [MinLength(1, ErrorMessage = "At least one item is required")]
         public List<PlaceOrderItemDto> Items { get; set; } = new();
+
+        // Optional delivery preferences
+        public DateTime? PreferredDeliveryDate { get; set; }
+        public string? PreferredDeliveryTime { get; set; }
+        public string? DeliveryInstructions { get; set; }
     }
 
     public class PlaceOrderItemDto

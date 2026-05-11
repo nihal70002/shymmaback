@@ -33,6 +33,13 @@ namespace ClientEcommerce.API.Models
 
         public decimal TotalAmount { get; set; }
 
+        // =======================
+        // DELIVERY PREFERENCES
+        // =======================
+        public DateTime? PreferredDeliveryDate { get; set; }
+        public string? PreferredDeliveryTime { get; set; }
+        public string? DeliveryInstructions { get; set; }
+
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }
 }

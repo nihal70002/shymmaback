@@ -35,7 +35,6 @@ public class UploadController : ControllerBase
     }
 
     [HttpPost("video")]
-    [RequestTimeout(300)] // 5 minutes timeout
     public async Task<IActionResult> UploadVideo([FromForm] IFormFile file)
     {
         if (file == null || file.Length == 0)

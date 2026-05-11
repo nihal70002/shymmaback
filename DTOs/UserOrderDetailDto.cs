@@ -7,6 +7,11 @@
         public required string Status { get; set; } // Fixed
         public decimal TotalAmount { get; set; }
 
+        // Delivery preferences
+        public DateTime? PreferredDeliveryDate { get; set; }
+        public string? PreferredDeliveryTime { get; set; }
+        public string? DeliveryInstructions { get; set; }
+
         public List<UserOrderItemDto> Items { get; set; } = []; // Initialized empty list
     }
 
