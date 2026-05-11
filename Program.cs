@@ -156,7 +156,7 @@ builder.Services.Configure<CloudinarySettings>(
 // ===================== REQUEST SIZE LIMIT =====================
 builder.WebHost.ConfigureKestrel(options =>
 {
-    options.Limits.MaxRequestBodySize = 10 * 1024 * 1024; // 10 MB
+    options.Limits.MaxRequestBodySize = 100 * 1024 * 1024; // 100 MB
 });
 
 // ===================== HEALTH CHECK (with DB) =====================

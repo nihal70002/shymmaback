@@ -39,6 +39,19 @@ public class UploadController : ControllerBase
         if (file == null || file.Length == 0)
             return BadRequest("No video selected");
 
+        // Validate file type
+        var allowedVideoTypes = new[] { "video/mp4", "video/avi", "video/mov", "video/wmv", "video/flv", "video/webm" };
+        if (!allowedVideoTypes.Contains(file.ContentType.ToLower()))
+        {
+            return BadRequest(new { message = "Invalid video format. Supported formats: MP4, AVI, MOV, WMV, FLV, WebM" });
+        }
+
+        // Validate file size (max 50MB)
+        if (file.Length > 50 * 1024 * 1024)
+        {
+            return BadRequest(new { message = "Video file size must be less than 50MB" });
+        }
+
         try
         {
             var url = await _cloudinary.UploadVideoAsync(file);

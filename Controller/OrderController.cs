@@ -58,6 +58,18 @@ namespace ClientEcommerce.API.Controllers
         }
 
         // ==========================
+        // USER: CANCEL ORDER
+        // ==========================
+        [HttpPost("my/{orderId}/cancel")]
+        [Authorize(Roles = "User")]
+        public IActionResult CancelMyOrder(int orderId, [FromBody] string reason)
+        {
+            int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            _orderService.CancelCustomerOrder(userId, orderId, reason);
+            return Ok(new { message = "Order cancelled successfully" });
+        }
+
+        // ==========================
         // ADMIN: CONFIRM ORDER
         // ==========================
         [HttpPost("{orderId}/confirm")]

@@ -12,6 +12,7 @@ namespace ClientEcommerce.API.Services
         IEnumerable<UserOrderListDto> GetOrdersForUser(int userId);
         UserOrderDetailDto GetOrderForUser(int orderId, int userId);
         Task<OrderDetailsDto?> GetMyOrderDetailsAsync(int userId, int orderId);
+        void CancelCustomerOrder(int userId, int orderId, string reason);
         Task<PagedResultDto<AdminOrderListDto>> GetAdminOrders(int page, int pageSize, string? status);
 
 

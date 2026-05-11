@@ -225,6 +225,21 @@ namespace ClientEcommerce.API.Services
             _context.SaveChanges();
         }
 
+        public void CancelCustomerOrder(int userId, int orderId, string reason)
+        {
+            var order = _context.Orders
+                .Where(o => o.Id == orderId && o.UserId == userId)
+                .FirstOrDefault()
+                ?? throw new NotFoundException("Order not found or you don't have permission to cancel this order");
+
+            if (order.Status != OrderStatus.Placed.ToString())
+                throw new BadRequestException("Only placed orders can be cancelled. This order is already " + order.Status);
+
+            order.Status = OrderStatus.Cancelled.ToString();
+            order.CancelReason = reason;
+            _context.SaveChanges();
+        }
+
         public void DispatchOrder(int orderId)
         {
             var order = _context.Orders.Find(orderId)
