@@ -110,6 +110,20 @@ namespace ClientEcommerce.API.Services
                             }
                         }
 
+                        // Add delivery preferences to admin message
+                        if (!string.IsNullOrWhiteSpace(order.PreferredDeliveryDate) || 
+                            !string.IsNullOrWhiteSpace(order.PreferredDeliveryTime) || 
+                            !string.IsNullOrWhiteSpace(order.DeliveryInstructions))
+                        {
+                            sb.AppendLine("--- Delivery Preferences ---");
+                            if (!string.IsNullOrWhiteSpace(order.PreferredDeliveryDate))
+                                sb.AppendLine($"Date: {order.PreferredDeliveryDate:yyyy-MM-dd}");
+                            if (!string.IsNullOrWhiteSpace(order.PreferredDeliveryTime))
+                                sb.AppendLine($"Time: {order.PreferredDeliveryTime}");
+                            if (!string.IsNullOrWhiteSpace(order.DeliveryInstructions))
+                                sb.AppendLine($"Instructions: {order.DeliveryInstructions}");
+                        }
+
                         var msg = sb.ToString().Trim();
                         foreach (var adminTo in adminNumbers)
                         {
@@ -120,6 +134,21 @@ namespace ClientEcommerce.API.Services
                     if (!string.IsNullOrWhiteSpace(userPhone))
                     {
                         var customerMsg = $"Your order has been placed successfully. OrderId: {order.Id}, Total: {order.TotalAmount}";
+                        
+                        // Add delivery preferences to customer message
+                        if (!string.IsNullOrWhiteSpace(order.PreferredDeliveryDate) || 
+                            !string.IsNullOrWhiteSpace(order.PreferredDeliveryTime) || 
+                            !string.IsNullOrWhiteSpace(order.DeliveryInstructions))
+                        {
+                            customerMsg += "\n\n📦 Delivery Preferences:";
+                            if (!string.IsNullOrWhiteSpace(order.PreferredDeliveryDate))
+                                customerMsg += $"\n📅 Date: {order.PreferredDeliveryDate:yyyy-MM-dd}";
+                            if (!string.IsNullOrWhiteSpace(order.PreferredDeliveryTime))
+                                customerMsg += $"\n⏰ Time: {order.PreferredDeliveryTime}";
+                            if (!string.IsNullOrWhiteSpace(order.DeliveryInstructions))
+                                customerMsg += $"\n📝 Instructions: {order.DeliveryInstructions}";
+                        }
+                        
                         await _whatsappService.SendWhatsapp(userPhone, customerMsg);
                     }
                     else
