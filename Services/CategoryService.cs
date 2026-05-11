@@ -2,6 +2,7 @@ using ClientEcommerce.API.Data;
 using ClientEcommerce.API.DTOs;
 using ClientEcommerce.API.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Web;
 
 namespace ClientEcommerce.API.Services
 {
@@ -84,8 +85,11 @@ namespace ClientEcommerce.API.Services
 
         public CategoryDto? GetCategoryWithChildren(string slug)
         {
+            // Decode URL-encoded slug to handle special characters like forward slashes
+            var decodedSlug = System.Web.HttpUtility.UrlDecode(slug);
+            
             var categoryDto = _context.Categories
-                .Where(c => c.Slug == slug && c.IsActive)
+                .Where(c => c.Slug == decodedSlug && c.IsActive)
                 .Select(c => new CategoryDto
                 {
                     Id = c.Id,
