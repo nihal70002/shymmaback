@@ -25,9 +25,23 @@ namespace ClientEcommerce.API.Controllers
         [Authorize(Roles = "User,Customer,Admin")]
         public async Task<IActionResult> PlaceOrder([FromBody] PlaceOrderByCustomerDto dto)
         {
-            int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            await _orderService.PlaceOrder(userId, dto);
-            return Ok(new { message = "Order placed successfully" });
+            try
+            {
+                int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+                await _orderService.PlaceOrder(userId, dto);
+                return Ok(new { message = "Order placed successfully" });
+            }
+            catch (Exception ex)
+            {
+                // Log the detailed error for debugging
+                Console.WriteLine($"PlaceOrder Error: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                }
+                throw; // Re-throw to be handled by GlobalExceptionMiddleware
+            }
         }
 
         // ==========================
