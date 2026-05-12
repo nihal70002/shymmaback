@@ -72,6 +72,8 @@ namespace ClientEcommerce.API.Services
 
                 try
                 {
+                    Console.WriteLine("Starting WhatsApp notifications for order...");
+                    
                     var detailedOrder = await _context.Orders
                         .AsNoTracking()
                         .Include(o => o.User)
@@ -86,7 +88,12 @@ namespace ClientEcommerce.API.Services
                     var userEmail = detailedOrder?.User?.Email;
                     var userCompany = detailedOrder?.User?.CompanyName;
 
+                    Console.WriteLine($"User phone: {userPhone}");
+                    Console.WriteLine($"User name: {userName}");
+
                     var adminNumbers = await _whatsappService.GetAdminWhatsappNumbers();
+                    Console.WriteLine($"Admin numbers count: {adminNumbers.Count}");
+                    
                     if (adminNumbers.Count > 0)
                     {
                         var sb = new StringBuilder();
@@ -126,8 +133,11 @@ namespace ClientEcommerce.API.Services
                         }
 
                         var msg = sb.ToString().Trim();
+                        Console.WriteLine($"Admin message: {msg}");
+                        
                         foreach (var adminTo in adminNumbers)
                         {
+                            Console.WriteLine($"Sending WhatsApp to admin: {adminTo}");
                             await _whatsappService.SendWhatsapp(adminTo, msg);
                         }
                     }
@@ -150,10 +160,14 @@ namespace ClientEcommerce.API.Services
                                 customerMsg += $"\n📝 Instructions: {order.DeliveryInstructions}";
                         }
                         
+                        Console.WriteLine($"Customer message: {customerMsg}");
+                        Console.WriteLine($"Sending WhatsApp to customer: {userPhone}");
+                        
                         await _whatsappService.SendWhatsapp(userPhone, customerMsg);
                     }
                     else
                     {
+                        Console.WriteLine("WhatsApp customer skipped: User has no phone number");
                         _logger.LogInformation("WhatsApp customer skipped: UserId={UserId} has no phone number", userId);
                     }
 
