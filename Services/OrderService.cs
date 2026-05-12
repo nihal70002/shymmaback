@@ -40,7 +40,8 @@ namespace ClientEcommerce.API.Services
                     UserId = userId,
                     Status = OrderStatus.Placed.ToString(),
                     OrderDate = DateTime.UtcNow,
-                    PreferredDeliveryDate = dto.PreferredDeliveryDate,
+                    PreferredDeliveryDate = dto.PreferredDeliveryDate.HasValue ? 
+                        DateTime.SpecifyKind(dto.PreferredDeliveryDate.Value, DateTimeKind.Utc) : null,
                     PreferredDeliveryTime = dto.PreferredDeliveryTime,
                     DeliveryInstructions = dto.DeliveryInstructions,
                     OrderItems = new List<OrderItem>()
