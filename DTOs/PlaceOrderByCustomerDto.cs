@@ -10,7 +10,11 @@ namespace ClientEcommerce.API.DTOs
 
         // Optional delivery preferences
         public DateTime? PreferredDeliveryDate { get; set; }
+        
+        [StringLength(100, ErrorMessage = "Delivery time must be less than 100 characters")]
         public string? PreferredDeliveryTime { get; set; }
+        
+        [StringLength(500, ErrorMessage = "Delivery instructions must be less than 500 characters")]
         public string? DeliveryInstructions { get; set; }
     }
 

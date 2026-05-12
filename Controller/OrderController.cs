@@ -27,8 +27,27 @@ namespace ClientEcommerce.API.Controllers
         {
             try
             {
+                // Log the received DTO for debugging
+                Console.WriteLine($"Received PlaceOrderByCustomerDto:");
+                Console.WriteLine($"  PreferredDeliveryDate: {dto.PreferredDeliveryDate}");
+                Console.WriteLine($"  PreferredDeliveryTime: {dto.PreferredDeliveryTime}");
+                Console.WriteLine($"  DeliveryInstructions: {dto.DeliveryInstructions}");
+                Console.WriteLine($"  Items count: {dto.Items?.Count}");
+                
+                // Test if the issue is with model binding by checking if dto is null
+                if (dto == null)
+                {
+                    Console.WriteLine("DTO is null - model binding failed");
+                    return BadRequest("Invalid request data");
+                }
+                
                 int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+                
+                // Try to create the order step by step to identify where it fails
+                Console.WriteLine("Starting order placement...");
                 await _orderService.PlaceOrder(userId, dto);
+                Console.WriteLine("Order placed successfully!");
+                
                 return Ok(new { message = "Order placed successfully" });
             }
             catch (Exception ex)
@@ -39,8 +58,15 @@ namespace ClientEcommerce.API.Controllers
                 if (ex.InnerException != null)
                 {
                     Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                    Console.WriteLine($"Inner Exception Stack Trace: {ex.InnerException.StackTrace}");
                 }
-                throw; // Re-throw to be handled by GlobalExceptionMiddleware
+                
+                // Return more detailed error info for debugging
+                return StatusCode(500, new { 
+                    error = ex.Message,
+                    innerError = ex.InnerException?.Message,
+                    stackTrace = ex.StackTrace
+                });
             }
         }
 
