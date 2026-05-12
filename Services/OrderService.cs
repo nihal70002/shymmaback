@@ -319,6 +319,9 @@ namespace ClientEcommerce.API.Services
                     CustomerName = order.User.Name,
                     CompanyName = order.User.CompanyName,
                     PhoneNumber = order.User.PhoneNumber,
+                    PreferredDeliveryDate = order.PreferredDeliveryDate,
+                    PreferredDeliveryTime = order.PreferredDeliveryTime,
+                    DeliveryInstructions = order.DeliveryInstructions,
                     Items = order.OrderItems.Select(i => new AdminOrderItemDto
                     {
                         ProductName = i.ProductVariant.Product.Name,

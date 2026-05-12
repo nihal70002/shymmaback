@@ -18,7 +18,10 @@
         public decimal TotalAmount { get; set; }
         public string? RejectedReason { get; set; }
 
-
+        // Delivery Preferences
+        public DateTime? PreferredDeliveryDate { get; set; }
+        public string? PreferredDeliveryTime { get; set; }
+        public string? DeliveryInstructions { get; set; }
 
         // Initialized with an empty list to prevent null reference issues
         public List<AdminOrderItemDto> Items { get; set; } = new List<AdminOrderItemDto>();
