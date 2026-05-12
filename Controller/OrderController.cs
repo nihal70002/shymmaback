@@ -22,7 +22,7 @@ namespace ClientEcommerce.API.Controllers
         // USER: PLACE ORDER
         // ==========================
         [HttpPost]
-        [Authorize(Roles = "User")]
+        [Authorize(Roles = "User,Customer")]
         public async Task<IActionResult> PlaceOrder([FromBody] PlaceOrderByCustomerDto dto)
         {
             int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -34,7 +34,7 @@ namespace ClientEcommerce.API.Controllers
         // USER: MY ORDERS
         // ==========================
         [HttpGet("my")]
-        [Authorize(Roles = "User")]
+        [Authorize(Roles = "User,Customer")]
         public IActionResult GetMyOrders()
         {
             int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -45,7 +45,7 @@ namespace ClientEcommerce.API.Controllers
         // USER: ORDER DETAILS
         // ==========================
         [HttpGet("my/{orderId}")]
-        [Authorize(Roles = "User")]
+        [Authorize(Roles = "User,Customer")]
         public async Task<IActionResult> GetMyOrderDetails(int orderId)
         {
             int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -61,7 +61,7 @@ namespace ClientEcommerce.API.Controllers
         // USER: CANCEL ORDER
         // ==========================
         [HttpPost("my/{orderId}/cancel")]
-        [Authorize(Roles = "User")]
+        [Authorize(Roles = "User,Customer")]
         public IActionResult CancelMyOrder(int orderId, [FromBody] string reason)
         {
             int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
