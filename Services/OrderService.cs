@@ -64,11 +64,7 @@ namespace ClientEcommerce.API.Services
                     totalAmount += variant.Price * item.Quantity;
                 }
 
-                // Calculate shipping charges
-                decimal shippingCharge = CalculateShippingCharge(totalAmount);
-                decimal finalTotal = totalAmount + shippingCharge;
-
-                order.TotalAmount = finalTotal;
+                order.TotalAmount = totalAmount;
 
                 _context.Orders.Add(order);
                 _context.SaveChanges();
@@ -148,20 +144,7 @@ namespace ClientEcommerce.API.Services
 
                     if (!string.IsNullOrWhiteSpace(userPhone))
                     {
-                        decimal shippingCharge = CalculateShippingCharge(totalAmount);
-                        var customerMsg = $"Your order has been placed successfully. OrderId: {order.Id}, Items Total: {totalAmount}";
-                        
-                        // Add shipping information
-                        if (shippingCharge > 0)
-                        {
-                            customerMsg += $"\n🚚 Shipping Charge: ₹{shippingCharge}";
-                        }
-                        else
-                        {
-                            customerMsg += "\n🚚 FREE SHIPPING";
-                        }
-                        
-                        customerMsg += $"\n💰 Final Total: ₹{order.TotalAmount}";
+                        var customerMsg = $"Your order has been placed successfully. OrderId: {order.Id}, Total: {order.TotalAmount}";
                         
                         // Add delivery preferences to customer message
                         if (order.PreferredDeliveryDate.HasValue || 
