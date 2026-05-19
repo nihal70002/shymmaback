@@ -1,6 +1,7 @@
 using ClientEcommerce.API.Data;
 using ClientEcommerce.API.DTOs;
 using ClientEcommerce.API.Enum;
+using ClientEcommerce.API.Helpers;
 using ClientEcommerce.API.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
@@ -359,8 +360,8 @@ namespace ClientEcommerce.API.Services
                         .GroupBy(v => new
                         {
                             Class = v.Class?.Trim().ToLower(),
-                            Style = v.Style?.Trim().ToLower(),
-                            Material = v.Material?.Trim().ToLower(),
+                            Style = ProductVariantOptions.NormalizeStyle(v.Style ?? v.Side)?.ToLower(),
+                            Material = ProductVariantOptions.NormalizeMaterial(v.Material)?.ToLower(),
                             Color = v.Color?.Trim().ToLower(),
                             Size = v.Size?.Trim().ToLower()
                         })
@@ -376,6 +377,12 @@ namespace ClientEcommerce.API.Services
 
                         if (string.IsNullOrWhiteSpace(sku))
                             throw new ValidationException("SKU / ProductCode is required");
+
+                        if (!ProductVariantOptions.IsValidStyle(v.Style ?? v.Side))
+                            throw new ValidationException("Style is required and must be Left or Right");
+
+                        if (!ProductVariantOptions.IsValidMaterial(v.Material))
+                            throw new ValidationException("Material is required and must be Titanium or Stainless Steel");
 
                         bool skuExists = _context.ProductVariants.Any(pv =>
                             pv.ProductCode.ToLower() == sku.ToLower());
@@ -438,8 +445,8 @@ namespace ClientEcommerce.API.Services
                         {
                             ProductId = product.Id,
                             Class = v.Class?.Trim(),
-                            Style = v.Style?.Trim(),
-                            Material = v.Material?.Trim(),
+                            Style = ProductVariantOptions.NormalizeStyle(v.Style ?? v.Side),
+                            Material = ProductVariantOptions.NormalizeMaterial(v.Material),
                             Color = v.Color?.Trim(),
                             Size = v.Size?.Trim(),
                             ProductCode = v.ProductCode?.Trim(),
@@ -632,8 +639,8 @@ namespace ClientEcommerce.API.Services
 
             // ---------- CLEAN VALUES ----------
             var classValue = dto.Class?.Trim();
-            var style = dto.Style?.Trim();
-            var material = dto.Material?.Trim();
+            var style = ProductVariantOptions.NormalizeStyle(dto.Style);
+            var material = ProductVariantOptions.NormalizeMaterial(dto.Material);
             var color = dto.Color?.Trim();
             var size = dto.Size?.Trim();
             var sku = dto.ProductCode?.Trim();
@@ -644,6 +651,12 @@ namespace ClientEcommerce.API.Services
 
             if (string.IsNullOrWhiteSpace(sku))
                 throw new ValidationException("SKU cannot be empty");
+
+            if (string.IsNullOrWhiteSpace(style))
+                throw new ValidationException("Style is required and must be Left or Right");
+
+            if (string.IsNullOrWhiteSpace(material))
+                throw new ValidationException("Material is required and must be Titanium or Stainless Steel");
 
             // ---------- COMBINATION VALIDATION ----------
             bool combinationExists = _context.ProductVariants.Any(v =>
@@ -727,8 +740,8 @@ namespace ClientEcommerce.API.Services
                             .GroupBy(v => new
                             {
                                 Class = v.Class?.Trim().ToLower(),
-                                Style = v.Style?.Trim().ToLower(),
-                                Material = v.Material?.Trim().ToLower(),
+                                Style = ProductVariantOptions.NormalizeStyle(v.Style)?.ToLower(),
+                                Material = ProductVariantOptions.NormalizeMaterial(v.Material)?.ToLower(),
                                 Color = v.Color?.Trim().ToLower(),
                                 Size = v.Size?.Trim().ToLower()
                             })
@@ -799,6 +812,12 @@ namespace ClientEcommerce.API.Services
                             if (string.IsNullOrWhiteSpace(sku))
                                 throw new ValidationException($"SKU is required in product: {dto.Name}");
 
+                            if (!ProductVariantOptions.IsValidStyle(v.Style))
+                                throw new ValidationException($"Style is required and must be Left or Right in product: {dto.Name}");
+
+                            if (!ProductVariantOptions.IsValidMaterial(v.Material))
+                                throw new ValidationException($"Material is required and must be Titanium or Stainless Steel in product: {dto.Name}");
+
                             bool skuExists = _context.ProductVariants
                                 .Any(pv => pv.ProductCode.ToLower() == sku.ToLower());
 
@@ -809,8 +828,8 @@ namespace ClientEcommerce.API.Services
                             {
                                 ProductId = product.Id,
                                 Class = v.Class?.Trim(),
-                                Style = v.Style?.Trim(),
-                                Material = v.Material?.Trim(),
+                                Style = ProductVariantOptions.NormalizeStyle(v.Style),
+                                Material = ProductVariantOptions.NormalizeMaterial(v.Material),
                                 Color = v.Color?.Trim(),
                                 Size = v.Size?.Trim(),
                                 ProductCode = sku,
@@ -868,8 +887,8 @@ namespace ClientEcommerce.API.Services
                 {
                     v.VariantId,
                     Class = v.Class?.Trim(),
-                    Style = (v.Style ?? v.Side)?.Trim(),
-                    Material = v.Material?.Trim(),
+                    Style = ProductVariantOptions.NormalizeStyle(v.Style ?? v.Side),
+                    Material = ProductVariantOptions.NormalizeMaterial(v.Material),
                     Color = v.Color?.Trim(),
                     Size = v.Size?.Trim(),
                     Sku = v.ProductCode?.Trim(),
@@ -882,6 +901,12 @@ namespace ClientEcommerce.API.Services
             {
                 if (string.IsNullOrWhiteSpace(v.Size) || string.IsNullOrWhiteSpace(v.Sku))
                     throw new ValidationException("Either Size or SKU (Product Code) is required");
+
+                if (string.IsNullOrWhiteSpace(v.Style))
+                    throw new ValidationException("Style is required and must be Left or Right");
+
+                if (string.IsNullOrWhiteSpace(v.Material))
+                    throw new ValidationException("Material is required and must be Titanium or Stainless Steel");
 
                 if (v.Stock < 0)
                     throw new ValidationException("Stock cannot be negative");
@@ -970,8 +995,8 @@ namespace ClientEcommerce.API.Services
 
             // ---------- REQUIRED FIELD VALIDATION ----------
             var classValue = dto.Class?.Trim();
-            var style = (dto.Style ?? dto.Side)?.Trim();
-            var material = dto.Material?.Trim();
+            var style = ProductVariantOptions.NormalizeStyle(dto.Style ?? dto.Side);
+            var material = ProductVariantOptions.NormalizeMaterial(dto.Material);
             var color = dto.Color?.Trim();
             var size = dto.Size?.Trim();
 
@@ -979,6 +1004,12 @@ namespace ClientEcommerce.API.Services
 
             if (string.IsNullOrWhiteSpace(size))
                 throw new ValidationException("Size is required");
+
+            if (string.IsNullOrWhiteSpace(style))
+                throw new ValidationException("Style is required and must be Left or Right");
+
+            if (string.IsNullOrWhiteSpace(material))
+                throw new ValidationException("Material is required and must be Titanium or Stainless Steel");
 
             if (dto.Stock < 0)
                 throw new ValidationException("Stock cannot be negative");

@@ -32,6 +32,7 @@ namespace ClientEcommerce.API.Services
             try
             {
                 var variants = _context.ProductVariants
+                    .Include(v => v.Product)
                     .Where(v => dto.Items.Select(i => i.ProductVariantId).Contains(v.Id))
                     .ToDictionary(v => v.Id);
 
@@ -54,12 +55,17 @@ namespace ClientEcommerce.API.Services
                     if (!variants.TryGetValue(item.ProductVariantId, out var variant))
                         throw new BadRequestException("Invalid product variant");
 
-                    order.OrderItems.Add(new OrderItem
+                    if (string.IsNullOrWhiteSpace(variant.Style) || string.IsNullOrWhiteSpace(variant.Material))
+                        throw new BadRequestException("Please select style and material before placing this order");
+
+                    var orderItem = new OrderItem
                     {
                         ProductVariantId = variant.Id,
                         Quantity = item.Quantity,
                         UnitPrice = variant.Price
-                    });
+                    };
+                    SetVariantSnapshot(orderItem, variant);
+                    order.OrderItems.Add(orderItem);
 
                     totalAmount += variant.Price * item.Quantity;
                 }
@@ -112,8 +118,13 @@ namespace ClientEcommerce.API.Services
                         {
                             foreach (var oi in detailedOrder.OrderItems)  
                             {
-                                var productName = oi.ProductVariant?.Product?.Name ?? "";
-                                var variantName = oi.ProductVariant?.Size ?? "";
+                                var productName = oi.ProductNameSnapshot ?? oi.ProductVariant?.Product?.Name ?? "";
+                                var variantName = BuildVariantDescription(
+                                    oi.SizeSnapshot ?? oi.ProductVariant?.Size,
+                                    oi.StyleSnapshot ?? oi.ProductVariant?.Style,
+                                    oi.MaterialSnapshot ?? oi.ProductVariant?.Material,
+                                    oi.ColorSnapshot ?? oi.ProductVariant?.Color,
+                                    oi.ClassSnapshot ?? oi.ProductVariant?.Class);
                                 sb.AppendLine($"- {productName} {variantName} | Qty: {oi.Quantity} | Price: {oi.UnitPrice}");
                             }
                         }
@@ -145,6 +156,22 @@ namespace ClientEcommerce.API.Services
                     if (!string.IsNullOrWhiteSpace(userPhone))
                     {
                         var customerMsg = $"Your order has been placed successfully. OrderId: {order.Id}, Total: {order.TotalAmount}";
+
+                        if (detailedOrder?.OrderItems != null && detailedOrder.OrderItems.Count > 0)
+                        {
+                            customerMsg += "\n\nItems:";
+                            foreach (var oi in detailedOrder.OrderItems)
+                            {
+                                var productName = oi.ProductNameSnapshot ?? oi.ProductVariant?.Product?.Name ?? "";
+                                var variantName = BuildVariantDescription(
+                                    oi.SizeSnapshot ?? oi.ProductVariant?.Size,
+                                    oi.StyleSnapshot ?? oi.ProductVariant?.Style,
+                                    oi.MaterialSnapshot ?? oi.ProductVariant?.Material,
+                                    oi.ColorSnapshot ?? oi.ProductVariant?.Color,
+                                    oi.ClassSnapshot ?? oi.ProductVariant?.Class);
+                                customerMsg += $"\n- {productName} {variantName} | Qty: {oi.Quantity}";
+                            }
+                        }
                         
                         // Add delivery preferences to customer message
                         if (order.PreferredDeliveryDate.HasValue || 
@@ -241,7 +268,13 @@ namespace ClientEcommerce.API.Services
                     Items = o.OrderItems.Select(i => new OrderItemDto
                     {
                         ProductId = i.ProductVariant.Product.Id,
-                        ProductName = i.ProductVariant.Product.Name,
+                        ProductName = i.ProductNameSnapshot ?? i.ProductVariant.Product.Name,
+                        Size = i.SizeSnapshot ?? i.ProductVariant.Size,
+                        Style = i.StyleSnapshot ?? i.ProductVariant.Style,
+                        Material = i.MaterialSnapshot ?? i.ProductVariant.Material,
+                        Color = i.ColorSnapshot ?? i.ProductVariant.Color,
+                        Class = i.ClassSnapshot ?? i.ProductVariant.Class,
+                        ProductCode = i.ProductCodeSnapshot ?? i.ProductVariant.ProductCode,
                         Quantity = i.Quantity,
                         UnitPrice = i.UnitPrice,
                         Subtotal = i.UnitPrice * i.Quantity,
@@ -338,8 +371,13 @@ namespace ClientEcommerce.API.Services
                     DeliveryInstructions = order.DeliveryInstructions,
                     Items = order.OrderItems.Select(i => new AdminOrderItemDto
                     {
-                        ProductName = i.ProductVariant.Product.Name,
-                        Size = i.ProductVariant.Size,
+                        ProductName = i.ProductNameSnapshot ?? i.ProductVariant.Product.Name,
+                        Size = i.SizeSnapshot ?? i.ProductVariant.Size,
+                        Style = i.StyleSnapshot ?? i.ProductVariant.Style,
+                        Material = i.MaterialSnapshot ?? i.ProductVariant.Material,
+                        Color = i.ColorSnapshot ?? i.ProductVariant.Color,
+                        Class = i.ClassSnapshot ?? i.ProductVariant.Class,
+                        ProductCode = i.ProductCodeSnapshot ?? i.ProductVariant.ProductCode,
                         Quantity = i.Quantity,
                         UnitPrice = i.UnitPrice
                     }).ToList()
@@ -408,7 +446,6 @@ namespace ClientEcommerce.API.Services
                 })
                 .ToList();
         }
-    }
 
     private decimal CalculateShippingCharge(decimal orderTotal)
     {
@@ -421,5 +458,30 @@ namespace ClientEcommerce.API.Services
         // Shipping charge for orders below ₹499
         // You can customize the shipping charge logic here
         return 40m; // ₹40 shipping charge for orders below ₹499
+    }
+
+        private static void SetVariantSnapshot(OrderItem item, ProductVariant variant)
+        {
+            item.ProductNameSnapshot = variant.Product.Name;
+            item.SizeSnapshot = variant.Size;
+            item.StyleSnapshot = variant.Style;
+            item.MaterialSnapshot = variant.Material;
+            item.ColorSnapshot = variant.Color;
+            item.ClassSnapshot = variant.Class;
+            item.ProductCodeSnapshot = variant.ProductCode;
+        }
+
+        private static string BuildVariantDescription(
+            string? size,
+            string? style,
+            string? material,
+            string? color,
+            string? classValue)
+        {
+            var parts = new[] { size, style, material, color, classValue }
+                .Where(v => !string.IsNullOrWhiteSpace(v));
+
+            return string.Join(" / ", parts);
+        }
     }
 }

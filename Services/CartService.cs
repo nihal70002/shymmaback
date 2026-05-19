@@ -31,6 +31,7 @@ namespace ClientEcommerce.API.Services
 
             // 2️⃣ Find the variant directly (no need to load all)
             var variant = _context.ProductVariants
+                .Include(v => v.Product)
                 .FirstOrDefault(v => v.Id == dto.ProductVariantId);
 
             if (variant == null)
@@ -38,6 +39,12 @@ namespace ClientEcommerce.API.Services
                 _logger.LogWarning("Variant {VariantId} not found for add-to-cart", dto.ProductVariantId);
                 throw new NotFoundException("Product variant not found");
             }
+
+            if (string.IsNullOrWhiteSpace(variant.Style) || string.IsNullOrWhiteSpace(variant.Material))
+                throw new BadRequestException("Please select style and material before adding this product to cart");
+
+            if (variant.Stock <= 0)
+                throw new BadRequestException("Selected variant is unavailable");
 
             // 3️⃣ Check existing cart item
             var existingItem = _context.CartItems.FirstOrDefault(i =>
@@ -48,6 +55,8 @@ namespace ClientEcommerce.API.Services
             if (existingItem != null)
             {
                 existingItem.Quantity += dto.Quantity;
+                existingItem.Price = variant.Price;
+                SetVariantSnapshot(existingItem, variant);
                 _logger.LogInformation("Updated cart item quantity for user {UserId}", userId);
             }
             else
@@ -59,6 +68,7 @@ namespace ClientEcommerce.API.Services
                     Quantity = dto.Quantity,
                     Price = variant.Price
                 };
+                SetVariantSnapshot(cartItem, variant);
                 _context.CartItems.Add(cartItem);
                 _logger.LogInformation("New cart item added for user {UserId}", userId);
             }
@@ -79,12 +89,13 @@ namespace ClientEcommerce.API.Services
                 .Select(i => new CartItemDto
                 {
                     ProductVariantId = i.ProductVariantId,
-                    ProductName = i.ProductVariant.Product.Name,
-                    Size = i.ProductVariant.Size,
-                    Material = i.ProductVariant.Material,
-                    Class = i.ProductVariant.Class,
-                    Color = i.ProductVariant.Color,
-                    ProductCode = i.ProductVariant.ProductCode,
+                    ProductName = i.ProductNameSnapshot ?? i.ProductVariant.Product.Name,
+                    Size = i.SizeSnapshot ?? i.ProductVariant.Size,
+                    Style = i.StyleSnapshot ?? i.ProductVariant.Style,
+                    Material = i.MaterialSnapshot ?? i.ProductVariant.Material,
+                    Class = i.ClassSnapshot ?? i.ProductVariant.Class,
+                    Color = i.ColorSnapshot ?? i.ProductVariant.Color,
+                    ProductCode = i.ProductCodeSnapshot ?? i.ProductVariant.ProductCode,
                     Quantity = i.Quantity,
                     ProductId = i.ProductVariant.ProductId,
                     Price = i.Price,
@@ -95,6 +106,17 @@ namespace ClientEcommerce.API.Services
         .FirstOrDefault()
                 })
                 .ToList();
+        }
+
+        private static void SetVariantSnapshot(CartItem item, ProductVariant variant)
+        {
+            item.ProductNameSnapshot = variant.Product.Name;
+            item.SizeSnapshot = variant.Size;
+            item.StyleSnapshot = variant.Style;
+            item.MaterialSnapshot = variant.Material;
+            item.ColorSnapshot = variant.Color;
+            item.ClassSnapshot = variant.Class;
+            item.ProductCodeSnapshot = variant.ProductCode;
         }
 
         // ================= REMOVE ITEM =================

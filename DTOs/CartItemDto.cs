@@ -8,6 +8,8 @@
 
     public string? Size { get; set; }
 
+    public string? Style { get; set; }
+
     public string? Material { get; set; }   // ✅ ADD THIS
 
     public string? Class { get; set; }      // ✅ ADD THIS

@@ -17,5 +17,12 @@ namespace ClientEcommerce.API.Models
 
         public int Quantity { get; set; }
         public decimal UnitPrice { get; set; }
+        public string? ProductNameSnapshot { get; set; }
+        public string? SizeSnapshot { get; set; }
+        public string? StyleSnapshot { get; set; }
+        public string? MaterialSnapshot { get; set; }
+        public string? ColorSnapshot { get; set; }
+        public string? ClassSnapshot { get; set; }
+        public string? ProductCodeSnapshot { get; set; }
     }
 }
