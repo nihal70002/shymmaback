@@ -43,8 +43,7 @@ namespace ClientEcommerce.API.Services
             if (string.IsNullOrWhiteSpace(variant.Style) || string.IsNullOrWhiteSpace(variant.Material))
                 throw new BadRequestException("Please select style and material before adding this product to cart");
 
-            if (variant.Stock <= 0)
-                throw new BadRequestException("Selected variant is unavailable");
+            // Stock check removed - allow backorders/pre-orders
 
             // 3️⃣ Check existing cart item
             var existingItem = _context.CartItems.FirstOrDefault(i =>
