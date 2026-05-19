@@ -64,7 +64,11 @@ namespace ClientEcommerce.API.Services
                     totalAmount += variant.Price * item.Quantity;
                 }
 
-                order.TotalAmount = totalAmount;
+                // Calculate shipping charges
+                decimal shippingCharge = CalculateShippingCharge(totalAmount);
+                decimal finalTotal = totalAmount + shippingCharge;
+
+                order.TotalAmount = finalTotal;
 
                 _context.Orders.Add(order);
                 _context.SaveChanges();
@@ -144,7 +148,20 @@ namespace ClientEcommerce.API.Services
 
                     if (!string.IsNullOrWhiteSpace(userPhone))
                     {
-                        var customerMsg = $"Your order has been placed successfully. OrderId: {order.Id}, Total: {order.TotalAmount}";
+                        decimal shippingCharge = CalculateShippingCharge(totalAmount);
+                        var customerMsg = $"Your order has been placed successfully. OrderId: {order.Id}, Items Total: {totalAmount}";
+                        
+                        // Add shipping information
+                        if (shippingCharge > 0)
+                        {
+                            customerMsg += $"\n🚚 Shipping Charge: ₹{shippingCharge}";
+                        }
+                        else
+                        {
+                            customerMsg += "\n🚚 FREE SHIPPING";
+                        }
+                        
+                        customerMsg += $"\n💰 Final Total: ₹{order.TotalAmount}";
                         
                         // Add delivery preferences to customer message
                         if (order.PreferredDeliveryDate.HasValue || 
@@ -408,5 +425,18 @@ namespace ClientEcommerce.API.Services
                 })
                 .ToList();
         }
+    }
+
+    private decimal CalculateShippingCharge(decimal orderTotal)
+    {
+        // Free shipping for orders above ₹499
+        if (orderTotal >= 499m)
+        {
+            return 0m;
+        }
+        
+        // Shipping charge for orders below ₹499
+        // You can customize the shipping charge logic here
+        return 40m; // ₹40 shipping charge for orders below ₹499
     }
 }
