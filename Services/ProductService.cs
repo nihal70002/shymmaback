@@ -379,7 +379,7 @@ namespace ClientEcommerce.API.Services
                             throw new ValidationException("SKU / ProductCode is required");
 
                         if (!ProductVariantOptions.IsValidStyle(v.Style ?? v.Side))
-                            throw new ValidationException("Style is required and must be Left or Right");
+                            throw new ValidationException("Style is required and must be Right, Left, or Universal");
 
                         if (!ProductVariantOptions.IsValidMaterial(v.Material))
                             throw new ValidationException("Material is required and must be Titanium or Stainless Steel");
@@ -653,7 +653,7 @@ namespace ClientEcommerce.API.Services
                 throw new ValidationException("SKU cannot be empty");
 
             if (string.IsNullOrWhiteSpace(style))
-                throw new ValidationException("Style is required and must be Left or Right");
+                throw new ValidationException("Style is required and must be Right, Left, or Universal");
 
             if (string.IsNullOrWhiteSpace(material))
                 throw new ValidationException("Material is required and must be Titanium or Stainless Steel");
@@ -813,7 +813,7 @@ namespace ClientEcommerce.API.Services
                                 throw new ValidationException($"SKU is required in product: {dto.Name}");
 
                             if (!ProductVariantOptions.IsValidStyle(v.Style))
-                                throw new ValidationException($"Style is required and must be Left or Right in product: {dto.Name}");
+                                throw new ValidationException($"Style is required and must be Right, Left, or Universal in product: {dto.Name}");
 
                             if (!ProductVariantOptions.IsValidMaterial(v.Material))
                                 throw new ValidationException($"Material is required and must be Titanium or Stainless Steel in product: {dto.Name}");
@@ -903,7 +903,7 @@ namespace ClientEcommerce.API.Services
                     throw new ValidationException("Either Size or SKU (Product Code) is required");
 
                 if (string.IsNullOrWhiteSpace(v.Style))
-                    throw new ValidationException("Style is required and must be Left or Right");
+                    throw new ValidationException("Style is required and must be Right, Left, or Universal");
 
                 if (string.IsNullOrWhiteSpace(v.Material))
                     throw new ValidationException("Material is required and must be Titanium or Stainless Steel");
@@ -1006,7 +1006,7 @@ namespace ClientEcommerce.API.Services
                 throw new ValidationException("Size is required");
 
             if (string.IsNullOrWhiteSpace(style))
-                throw new ValidationException("Style is required and must be Left or Right");
+                throw new ValidationException("Style is required and must be Right, Left, or Universal");
 
             if (string.IsNullOrWhiteSpace(material))
                 throw new ValidationException("Material is required and must be Titanium or Stainless Steel");

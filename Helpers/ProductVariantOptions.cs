@@ -2,7 +2,7 @@ namespace ClientEcommerce.API.Helpers
 {
     public static class ProductVariantOptions
     {
-        public static readonly string[] Styles = ["Left", "Right"];
+        public static readonly string[] Styles = ["Right", "Left", "Universal"];
         public static readonly string[] Materials = ["Titanium", "Stainless Steel"];
 
         public static string? NormalizeStyle(string? value)
