@@ -16,6 +16,8 @@ public class Category
 
     public string? ImageUrl { get; set; }
 
+    public int DisplayOrder { get; set; }
+
     public int? ParentCategoryId { get; set; }
 
     [ForeignKey("ParentCategoryId")]

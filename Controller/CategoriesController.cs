@@ -83,6 +83,22 @@ namespace ClientEcommerce.API.Controllers
             }
         }
 
+        // Admin Reorder
+        [Authorize(Roles = "Admin")]
+        [HttpPut("reorder")]
+        public IActionResult Reorder([FromBody] ReorderCategoriesDto dto)
+        {
+            try
+            {
+                _service.Reorder(dto);
+                return Ok(new { message = "Category order updated successfully" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
         // 🔐 Admin Delete
         [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]

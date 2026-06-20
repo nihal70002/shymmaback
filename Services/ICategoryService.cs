@@ -7,6 +7,7 @@ namespace ClientEcommerce.API.Services
         IEnumerable<CategoryDto> GetAll(bool admin);
         void Create(CreateCategoryDto dto, string? imageUrl);
         void Update(int id, UpdateCategoryDto dto, string? imageUrl);
+        void Reorder(ReorderCategoriesDto dto);
         void Delete(int id);
         CategoryDto? GetCategoryWithChildren(string slug);
     }
