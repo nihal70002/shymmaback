@@ -7,6 +7,7 @@ namespace ClientEcommerce.API.Services
 {
     public class CategoryService : ICategoryService
     {
+        private const int MaxCategoryDepth = 3;
         private readonly AppDbContext _context;
 
         public CategoryService(AppDbContext context)
@@ -43,6 +44,13 @@ namespace ClientEcommerce.API.Services
         {
             if (_context.Categories.Any(c => c.Name == dto.Name))
                 throw new BadRequestException("Category already exists");
+
+            if (dto.ParentCategoryId.HasValue)
+            {
+                var parentDepth = GetCategoryDepth(dto.ParentCategoryId.Value);
+                if (parentDepth >= MaxCategoryDepth)
+                    throw new BadRequestException("Only 3-level category hierarchy allowed");
+            }
 
             var displayOrder = _context.Categories
                 .Where(c => c.ParentCategoryId == dto.ParentCategoryId)
@@ -112,7 +120,22 @@ namespace ClientEcommerce.API.Services
                             IsActive = sc.IsActive,
                             ParentCategoryId = sc.ParentCategoryId,
                             ImageUrl = sc.ImageUrl,
-                            DisplayOrder = sc.DisplayOrder
+                            DisplayOrder = sc.DisplayOrder,
+                            SubCategories = sc.SubCategories
+                                .Where(gc => gc.IsActive)
+                                .OrderBy(gc => gc.DisplayOrder)
+                                .ThenBy(gc => gc.Id)
+                                .Select(gc => new CategoryDto
+                                {
+                                    Id = gc.Id,
+                                    Name = gc.Name,
+                                    Slug = gc.Slug,
+                                    IsActive = gc.IsActive,
+                                    ParentCategoryId = gc.ParentCategoryId,
+                                    ImageUrl = gc.ImageUrl,
+                                    DisplayOrder = gc.DisplayOrder
+                                })
+                                .ToList()
                         })
                         .ToList()
                 })
@@ -140,15 +163,17 @@ namespace ClientEcommerce.API.Services
                 if (parent == null)
                     throw new NotFoundException("Parent category not found");
 
-                if (parent.ParentCategoryId != null)
-                    throw new BadRequestException("Only 2-level hierarchy allowed");
+                if (IsDescendant(dto.ParentCategoryId.Value, id))
+                    throw new BadRequestException("Category cannot be moved below its own child");
             }
 
-            var hasChildren = _context.Categories
-                .Any(c => c.ParentCategoryId == id);
+            var newParentDepth = dto.ParentCategoryId.HasValue
+                ? GetCategoryDepth(dto.ParentCategoryId.Value)
+                : 0;
+            var subtreeHeight = GetSubtreeHeight(id);
 
-            if (hasChildren && dto.ParentCategoryId != null)
-                throw new BadRequestException("Cannot move main category that has subcategories");
+            if (newParentDepth + subtreeHeight > MaxCategoryDepth)
+                throw new BadRequestException("Only 3-level category hierarchy allowed");
 
             var oldParentCategoryId = category.ParentCategoryId;
 
@@ -177,6 +202,65 @@ namespace ClientEcommerce.API.Services
             }
 
             _context.SaveChanges();
+        }
+
+        private int GetCategoryDepth(int categoryId)
+        {
+            var depth = 0;
+            int? currentId = categoryId;
+
+            while (currentId.HasValue)
+            {
+                var category = _context.Categories
+                    .AsNoTracking()
+                    .Where(c => c.Id == currentId.Value)
+                    .Select(c => new { c.Id, c.ParentCategoryId })
+                    .FirstOrDefault();
+
+                if (category == null)
+                    throw new NotFoundException("Category not found");
+
+                depth++;
+                currentId = category.ParentCategoryId;
+
+                if (depth > MaxCategoryDepth)
+                    break;
+            }
+
+            return depth;
+        }
+
+        private int GetSubtreeHeight(int categoryId)
+        {
+            var childIds = _context.Categories
+                .AsNoTracking()
+                .Where(c => c.ParentCategoryId == categoryId)
+                .Select(c => c.Id)
+                .ToList();
+
+            if (!childIds.Any())
+                return 1;
+
+            return 1 + childIds.Max(GetSubtreeHeight);
+        }
+
+        private bool IsDescendant(int possibleDescendantId, int categoryId)
+        {
+            int? currentId = possibleDescendantId;
+
+            while (currentId.HasValue)
+            {
+                if (currentId.Value == categoryId)
+                    return true;
+
+                currentId = _context.Categories
+                    .AsNoTracking()
+                    .Where(c => c.Id == currentId.Value)
+                    .Select(c => c.ParentCategoryId)
+                    .FirstOrDefault();
+            }
+
+            return false;
         }
 
         public void Reorder(ReorderCategoriesDto dto)

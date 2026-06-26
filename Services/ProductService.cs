@@ -92,6 +92,38 @@ namespace ClientEcommerce.API.Services
             _cache.SetString(ProductCacheVersionKey, version.ToString());
         }
 
+        private List<int> GetCategoryAndDescendantIds(List<int> categoryIds)
+        {
+            var allCategoryIds = _context.Categories
+                .AsNoTracking()
+                .Select(c => new { c.Id, c.ParentCategoryId })
+                .ToList();
+            var result = new HashSet<int>(categoryIds);
+            var queue = new Queue<int>(categoryIds);
+
+            while (queue.Count > 0)
+            {
+                var parentId = queue.Dequeue();
+                var childIds = allCategoryIds
+                    .Where(c => c.ParentCategoryId == parentId)
+                    .Select(c => c.Id)
+                    .ToList();
+
+                foreach (var childId in childIds)
+                {
+                    if (result.Add(childId))
+                        queue.Enqueue(childId);
+                }
+            }
+
+            return result.ToList();
+        }
+
+        private bool IsLeafCategory(int categoryId)
+        {
+            return !_context.Categories.Any(c => c.ParentCategoryId == categoryId);
+        }
+
         // ===========================
         // USER – LIST PRODUCTS (PAGED)
         // ===========================
@@ -132,29 +164,7 @@ namespace ClientEcommerce.API.Services
             // 🔹 CATEGORY FILTER (correct hierarchy filtering)
             if (categoryIds != null && categoryIds.Any())
             {
-                var selectedCategories = _context.Categories
-                    .Where(c => categoryIds.Contains(c.Id))
-                    .ToList();
-
-                var mainCategoryIds = selectedCategories
-                    .Where(c => c.ParentCategoryId == null)
-                    .Select(c => c.Id)
-                    .ToList();
-
-                var subCategoryIds = selectedCategories
-                    .Where(c => c.ParentCategoryId != null)
-                    .Select(c => c.Id)
-                    .ToList();
-
-                var childrenOfMain = _context.Categories
-                    .Where(c => c.ParentCategoryId.HasValue &&
-                                mainCategoryIds.Contains(c.ParentCategoryId.Value))
-                    .Select(c => c.Id)
-                    .ToList();
-
-                var finalCategoryIds = subCategoryIds
-                    .Concat(childrenOfMain)
-                    .ToList();
+                var finalCategoryIds = GetCategoryAndDescendantIds(categoryIds);
 
                 // 🔥 IMPORTANT FIX
                 if (!finalCategoryIds.Any())
@@ -338,9 +348,8 @@ namespace ClientEcommerce.API.Services
                 if (category == null)
                     throw new ValidationException("Invalid category selected");
 
-                // Product must belong to subcategory
-                if (category.ParentCategoryId == null)
-                    throw new ValidationException("Product must belong to subcategory only");
+                if (!IsLeafCategory(category.Id))
+                    throw new ValidationException("Product must belong to a final subcategory only");
 
                 if (!_context.Brands.Any(b => b.BrandId == dto.BrandId))
                     throw new ValidationException("Invalid Brand");
@@ -511,8 +520,8 @@ namespace ClientEcommerce.API.Services
             if (category == null)
                 throw new ValidationException("Invalid Category");
 
-            if (category.ParentCategoryId == null)
-                throw new ValidationException("Product must belong to subcategory only");
+            if (!IsLeafCategory(category.Id))
+                throw new ValidationException("Product must belong to a final subcategory only");
 
             // ================= BASIC PRODUCT UPDATE =================
 
@@ -723,8 +732,8 @@ namespace ClientEcommerce.API.Services
                     if (category == null)
                         throw new ValidationException($"Invalid category for product: {dto.Name}");
 
-                    if (category.ParentCategoryId == null)
-                        throw new ValidationException($"Product must belong to subcategory: {dto.Name}");
+                    if (!IsLeafCategory(category.Id))
+                        throw new ValidationException($"Product must belong to a final subcategory: {dto.Name}");
 
                     if (!_context.Brands.Any(b => b.BrandId == dto.BrandId))
                         throw new ValidationException($"Invalid brand for product: {dto.Name}");
