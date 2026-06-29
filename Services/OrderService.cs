@@ -296,10 +296,6 @@ namespace ClientEcommerce.API.Services
                         Class = i.ClassSnapshot ?? i.ProductVariant.Class,
                         ProductCode = i.ProductCodeSnapshot ?? i.ProductVariant.ProductCode,
                         Quantity = i.Quantity,
-                        Color = i.ColorSnapshot ?? i.ProductVariant.Color,
-                        Class = i.ClassSnapshot ?? i.ProductVariant.Class,
-                        ProductCode = i.ProductCodeSnapshot ?? i.ProductVariant.ProductCode,
-                        Quantity = i.Quantity,
                         UnitPrice = i.UnitPrice
                     }).ToList()
                 })
@@ -366,6 +362,109 @@ namespace ClientEcommerce.API.Services
                     PhoneNumber = o.User.PhoneNumber
                 })
                 .ToList();
+        }
+
+        public void CancelCustomerOrder(int userId, int orderId, string reason)
+        {
+            var order = _context.Orders
+                .FirstOrDefault(o => o.Id == orderId && o.UserId == userId)
+                ?? throw new NotFoundException("Order not found");
+
+            if (order.Status != OrderStatus.Placed.ToString())
+                throw new BadRequestException("Only placed orders can be cancelled");
+
+            order.Status = OrderStatus.Cancelled.ToString();
+            _context.SaveChanges();
+        }
+
+        public void ConfirmOrder(int orderId)
+        {
+            var order = _context.Orders
+                .FirstOrDefault(o => o.Id == orderId)
+                ?? throw new NotFoundException("Order not found");
+
+            if (order.Status != OrderStatus.Placed.ToString())
+                throw new BadRequestException("Only placed orders can be confirmed");
+
+            order.Status = OrderStatus.Confirmed.ToString();
+            _context.SaveChanges();
+        }
+
+        public void CancelOrder(int orderId, string reason)
+        {
+            var order = _context.Orders
+                .FirstOrDefault(o => o.Id == orderId)
+                ?? throw new NotFoundException("Order not found");
+
+            if (order.Status != OrderStatus.Placed.ToString() && order.Status != OrderStatus.Confirmed.ToString())
+                throw new BadRequestException("Only placed or confirmed orders can be cancelled");
+
+            order.Status = OrderStatus.Cancelled.ToString();
+            _context.SaveChanges();
+        }
+
+        public void DispatchOrder(int orderId)
+        {
+            var order = _context.Orders
+                .FirstOrDefault(o => o.Id == orderId)
+                ?? throw new NotFoundException("Order not found");
+
+            if (order.Status != OrderStatus.Confirmed.ToString())
+                throw new BadRequestException("Only confirmed orders can be dispatched");
+
+            order.Status = OrderStatus.Dispatched.ToString();
+            _context.SaveChanges();
+        }
+
+        public void DeliverOrder(int orderId)
+        {
+            var order = _context.Orders
+                .FirstOrDefault(o => o.Id == orderId)
+                ?? throw new NotFoundException("Order not found");
+
+            if (order.Status != OrderStatus.Dispatched.ToString())
+                throw new BadRequestException("Only dispatched orders can be delivered");
+
+            order.Status = OrderStatus.Delivered.ToString();
+            order.DeliveredAt = DateTime.UtcNow;
+            _context.SaveChanges();
+        }
+
+        public async Task<AdminOrderDetailDto?> GetOrderByIdAsync(int orderId)
+        {
+            return await _context.Orders
+                .AsNoTracking()
+                .Where(o => o.Id == orderId)
+                .Select(o => new AdminOrderDetailDto
+                {
+                    OrderId = o.Id,
+                    OrderDate = o.OrderDate,
+                    Status = o.Status,
+                    TotalAmount = o.TotalAmount,
+                    PreferredDeliveryDate = o.PreferredDeliveryDate,
+                    PreferredDeliveryTime = o.PreferredDeliveryTime,
+                    DeliveryInstructions = o.DeliveryInstructions,
+                    SurgeonName = o.SurgeonName,
+                    HospitalName = o.HospitalName,
+                    CustomerName = o.User.Name,
+                    CompanyName = o.User.CompanyName,
+                    PhoneNumber = o.User.PhoneNumber,
+                    Email = o.User.Email,
+                    Items = o.OrderItems.Select(i => new OrderItemDto
+                    {
+                        ProductId = i.ProductVariant.Product.Id,
+                        ProductName = i.ProductNameSnapshot ?? i.ProductVariant.Product.Name,
+                        Size = i.SizeSnapshot ?? i.ProductVariant.Size,
+                        Style = i.StyleSnapshot ?? i.ProductVariant.Style,
+                        Material = i.MaterialSnapshot ?? i.ProductVariant.Material,
+                        Color = i.ColorSnapshot ?? i.ProductVariant.Color,
+                        Class = i.ClassSnapshot ?? i.ProductVariant.Class,
+                        ProductCode = i.ProductCodeSnapshot ?? i.ProductVariant.ProductCode,
+                        Quantity = i.Quantity,
+                        UnitPrice = i.UnitPrice
+                    }).ToList()
+                })
+                .FirstOrDefaultAsync();
         }
 
     private decimal CalculateShippingCharge(decimal orderTotal)
