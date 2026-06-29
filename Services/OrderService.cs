@@ -36,7 +36,7 @@ namespace ClientEcommerce.API.Services
                     .Where(v => dto.Items.Select(i => i.ProductVariantId).Contains(v.Id))
                     .ToDictionary(v => v.Id);
 
-                var order = new Order
+                
 
                 var order = new Order
                 {
