@@ -37,6 +37,8 @@ namespace ClientEcommerce.API.Services
                     .ToDictionary(v => v.Id);
 
                 var order = new Order
+
+                var order = new Order
                 {
                     UserId = userId,
                     Status = OrderStatus.Placed.ToString(),
@@ -45,6 +47,8 @@ namespace ClientEcommerce.API.Services
                         DateTime.SpecifyKind(dto.PreferredDeliveryDate.Value, DateTimeKind.Utc) : null,
                     PreferredDeliveryTime = dto.PreferredDeliveryTime,
                     DeliveryInstructions = dto.DeliveryInstructions,
+                    SurgeonName = dto.SurgeonName,
+                    HospitalName = dto.HospitalName,
                     OrderItems = new List<OrderItem>()
                 };
 
@@ -132,7 +136,9 @@ namespace ClientEcommerce.API.Services
                         // Add delivery preferences to admin message
                         if (order.PreferredDeliveryDate.HasValue || 
                             !string.IsNullOrWhiteSpace(order.PreferredDeliveryTime) || 
-                            !string.IsNullOrWhiteSpace(order.DeliveryInstructions))
+                            !string.IsNullOrWhiteSpace(order.DeliveryInstructions) ||
+                            !string.IsNullOrWhiteSpace(order.SurgeonName) ||
+                            !string.IsNullOrWhiteSpace(order.HospitalName))
                         {
                             sb.AppendLine("--- Delivery Preferences ---");
                             if (order.PreferredDeliveryDate.HasValue)
@@ -141,6 +147,10 @@ namespace ClientEcommerce.API.Services
                                 sb.AppendLine($"Time: {order.PreferredDeliveryTime}");
                             if (!string.IsNullOrWhiteSpace(order.DeliveryInstructions))
                                 sb.AppendLine($"Instructions: {order.DeliveryInstructions}");
+                            if (!string.IsNullOrWhiteSpace(order.SurgeonName))
+                                sb.AppendLine($"Surgeon: {order.SurgeonName}");
+                            if (!string.IsNullOrWhiteSpace(order.HospitalName))
+                                sb.AppendLine($"Hospital: {order.HospitalName}");
                         }
 
                         var msg = sb.ToString().Trim();
@@ -176,7 +186,9 @@ namespace ClientEcommerce.API.Services
                         // Add delivery preferences to customer message
                         if (order.PreferredDeliveryDate.HasValue || 
                             !string.IsNullOrWhiteSpace(order.PreferredDeliveryTime) || 
-                            !string.IsNullOrWhiteSpace(order.DeliveryInstructions))
+                            !string.IsNullOrWhiteSpace(order.DeliveryInstructions) ||
+                            !string.IsNullOrWhiteSpace(order.SurgeonName) ||
+                            !string.IsNullOrWhiteSpace(order.HospitalName))
                         {
                             customerMsg += "\n\n📦 Delivery Preferences:";
                             if (order.PreferredDeliveryDate.HasValue)
@@ -185,6 +197,10 @@ namespace ClientEcommerce.API.Services
                                 customerMsg += $"\n⏰ Time: {order.PreferredDeliveryTime}";
                             if (!string.IsNullOrWhiteSpace(order.DeliveryInstructions))
                                 customerMsg += $"\n📝 Instructions: {order.DeliveryInstructions}";
+                            if (!string.IsNullOrWhiteSpace(order.SurgeonName))
+                                customerMsg += $"\n👨‍⚕️ Surgeon: {order.SurgeonName}";
+                            if (!string.IsNullOrWhiteSpace(order.HospitalName))
+                                customerMsg += $"\n🏥 Hospital: {order.HospitalName}";
                         }
                         
                         Console.WriteLine($"Customer message: {customerMsg}");
@@ -246,7 +262,9 @@ namespace ClientEcommerce.API.Services
                 TotalAmount = order.TotalAmount,
                 PreferredDeliveryDate = order.PreferredDeliveryDate,
                 PreferredDeliveryTime = order.PreferredDeliveryTime,
-                DeliveryInstructions = order.DeliveryInstructions
+                DeliveryInstructions = order.DeliveryInstructions,
+                SurgeonName = order.SurgeonName,
+                HospitalName = order.HospitalName
             };
         }
 
@@ -265,6 +283,8 @@ namespace ClientEcommerce.API.Services
                     PreferredDeliveryDate = o.PreferredDeliveryDate,
                     PreferredDeliveryTime = o.PreferredDeliveryTime,
                     DeliveryInstructions = o.DeliveryInstructions,
+                    SurgeonName = o.SurgeonName,
+                    HospitalName = o.HospitalName,
                     Items = o.OrderItems.Select(i => new OrderItemDto
                     {
                         ProductId = i.ProductVariant.Product.Id,
@@ -276,105 +296,6 @@ namespace ClientEcommerce.API.Services
                         Class = i.ClassSnapshot ?? i.ProductVariant.Class,
                         ProductCode = i.ProductCodeSnapshot ?? i.ProductVariant.ProductCode,
                         Quantity = i.Quantity,
-                        UnitPrice = i.UnitPrice,
-                        Subtotal = i.UnitPrice * i.Quantity,
-                        ProductImage = i.ProductVariant.Product.Images
-                            .OrderByDescending(img => img.IsPrimary)
-                            .Select(img => img.ImageUrl)
-                            .FirstOrDefault()
-                    }).ToList()
-                })
-                .FirstOrDefaultAsync();
-        }
-
-        // ================= ADMIN =================
-
-        public void ConfirmOrder(int orderId)
-        {
-            var order = _context.Orders.Find(orderId)
-                ?? throw new NotFoundException("Order not found");
-
-            if (order.Status != OrderStatus.Placed.ToString())
-                throw new BadRequestException("Only placed orders can be confirmed");
-
-            order.Status = OrderStatus.Confirmed.ToString();
-            _context.SaveChanges();
-        }
-
-        public void CancelOrder(int orderId, string reason)
-        {
-            var order = _context.Orders.Find(orderId)
-                ?? throw new NotFoundException("Order not found");
-
-            order.Status = OrderStatus.Cancelled.ToString();
-            order.CancelReason = reason;
-            _context.SaveChanges();
-        }
-
-        public void CancelCustomerOrder(int userId, int orderId, string reason)
-        {
-            var order = _context.Orders
-                .Where(o => o.Id == orderId && o.UserId == userId)
-                .FirstOrDefault()
-                ?? throw new NotFoundException("Order not found or you don't have permission to cancel this order");
-
-            if (order.Status != OrderStatus.Placed.ToString())
-                throw new BadRequestException("Only placed orders can be cancelled. This order is already " + order.Status);
-
-            order.Status = OrderStatus.Cancelled.ToString();
-            order.CancelReason = reason;
-            _context.SaveChanges();
-        }
-
-        public void DispatchOrder(int orderId)
-        {
-            var order = _context.Orders.Find(orderId)
-                ?? throw new NotFoundException("Order not found");
-
-            if (order.Status != OrderStatus.Confirmed.ToString())
-                throw new BadRequestException("Order must be confirmed before dispatch");
-
-            order.Status = OrderStatus.Dispatched.ToString();
-            order.DispatchedAt = DateTime.UtcNow;
-            _context.SaveChanges();
-        }
-
-        public void DeliverOrder(int orderId)
-        {
-            var order = _context.Orders.Find(orderId)
-                ?? throw new NotFoundException("Order not found");
-
-            if (order.Status != OrderStatus.Dispatched.ToString())
-                throw new BadRequestException("Order must be dispatched before delivery");
-
-            order.Status = OrderStatus.Delivered.ToString();
-            order.DeliveredAt = DateTime.UtcNow;
-            _context.SaveChanges();
-        }
-
-        public async Task<AdminOrderDetailDto?> GetOrderByIdAsync(int orderId)
-        {
-            return await _context.Orders
-                .AsNoTracking()
-                .Where(o => o.Id == orderId)
-                .Select(order => new AdminOrderDetailDto
-                {
-                    OrderId = order.Id,
-                    OrderDate = order.OrderDate,
-                    Status = order.Status,
-                    TotalAmount = order.TotalAmount,
-                    CustomerName = order.User.Name,
-                    CompanyName = order.User.CompanyName,
-                    PhoneNumber = order.User.PhoneNumber,
-                    PreferredDeliveryDate = order.PreferredDeliveryDate,
-                    PreferredDeliveryTime = order.PreferredDeliveryTime,
-                    DeliveryInstructions = order.DeliveryInstructions,
-                    Items = order.OrderItems.Select(i => new AdminOrderItemDto
-                    {
-                        ProductName = i.ProductNameSnapshot ?? i.ProductVariant.Product.Name,
-                        Size = i.SizeSnapshot ?? i.ProductVariant.Size,
-                        Style = i.StyleSnapshot ?? i.ProductVariant.Style,
-                        Material = i.MaterialSnapshot ?? i.ProductVariant.Material,
                         Color = i.ColorSnapshot ?? i.ProductVariant.Color,
                         Class = i.ClassSnapshot ?? i.ProductVariant.Class,
                         ProductCode = i.ProductCodeSnapshot ?? i.ProductVariant.ProductCode,

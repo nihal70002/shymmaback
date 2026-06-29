@@ -1,4 +1,4 @@
-﻿namespace ClientEcommerce.API.DTOs
+namespace ClientEcommerce.API.DTOs
 {
     public class AdminOrderDetailDto
     {
@@ -22,6 +22,9 @@
         public DateTime? PreferredDeliveryDate { get; set; }
         public string? PreferredDeliveryTime { get; set; }
         public string? DeliveryInstructions { get; set; }
+
+        public string? SurgeonName { get; set; }
+        public string? HospitalName { get; set; }
 
         // Initialized with an empty list to prevent null reference issues
         public List<AdminOrderItemDto> Items { get; set; } = new List<AdminOrderItemDto>();

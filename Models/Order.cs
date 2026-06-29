@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 
 namespace ClientEcommerce.API.Models
 {
@@ -39,6 +39,9 @@ namespace ClientEcommerce.API.Models
         public DateTime? PreferredDeliveryDate { get; set; }
         public string? PreferredDeliveryTime { get; set; }
         public string? DeliveryInstructions { get; set; }
+
+        public string? SurgeonName { get; set; }
+        public string? HospitalName { get; set; }
 
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }

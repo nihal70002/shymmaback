@@ -1,4 +1,6 @@
-﻿public class OrderDetailsDto
+using ClientEcommerce.API.DTOs;
+
+public class OrderDetailsDto
 {
     public int OrderId { get; set; }
     public DateTime OrderDate { get; set; }
@@ -10,6 +12,9 @@
     public DateTime? PreferredDeliveryDate { get; set; }
     public string? PreferredDeliveryTime { get; set; }
     public string? DeliveryInstructions { get; set; }
+
+    public string? SurgeonName { get; set; }
+    public string? HospitalName { get; set; }
     
     public List<OrderItemDto> Items { get; set; } = new();
 }

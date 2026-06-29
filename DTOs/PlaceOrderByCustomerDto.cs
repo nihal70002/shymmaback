@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace ClientEcommerce.API.DTOs
 {
@@ -16,6 +16,12 @@ namespace ClientEcommerce.API.DTOs
         
         [StringLength(500, ErrorMessage = "Delivery instructions must be less than 500 characters")]
         public string? DeliveryInstructions { get; set; }
+
+        [StringLength(200, ErrorMessage = "Surgeon name must be less than 200 characters")]
+        public string? SurgeonName { get; set; }
+
+        [StringLength(200, ErrorMessage = "Hospital name must be less than 200 characters")]
+        public string? HospitalName { get; set; }
     }
 
     public class PlaceOrderItemDto

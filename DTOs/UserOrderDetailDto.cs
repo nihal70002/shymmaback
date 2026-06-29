@@ -1,4 +1,4 @@
-﻿namespace ClientEcommerce.API.DTOs
+namespace ClientEcommerce.API.DTOs
 {
     public class UserOrderDetailDto
     {
@@ -11,6 +11,9 @@
         public DateTime? PreferredDeliveryDate { get; set; }
         public string? PreferredDeliveryTime { get; set; }
         public string? DeliveryInstructions { get; set; }
+
+        public string? SurgeonName { get; set; }
+        public string? HospitalName { get; set; }
 
         public List<UserOrderItemDto> Items { get; set; } = []; // Initialized empty list
     }
